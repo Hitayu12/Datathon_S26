@@ -24,6 +24,13 @@ from llm_prompts import (
     build_verify_failure_status_user_prompt,
 )
 
+GAP_LABELS = {
+    "debt_to_equity_gap": "Debt to equity gap",
+    "current_ratio_gap": "Liquidity buffer gap (current ratio)",
+    "revenue_growth_gap": "Revenue growth gap",
+    "cash_burn_gap": "Cash burn gap",
+}
+
 
 class GroqReasoningClient:
     """Calls Groq chat completions and requests structured JSON output."""

@@ -383,31 +383,6 @@ def _render_llm_badge(provider_name: str, model_name: str) -> None:
     )
 
 
-def _test_llm_connection(reasoning_client: object, provider_name: str) -> Tuple[bool, str]:
-    system_prompt = 'Return JSON only with key "ok" and boolean value true.'
-    user_prompt = "Respond with the requested JSON."
-
-    if provider_name == "Groq":
-        response = reasoning_client._chat_json(
-            system_prompt,
-            user_prompt,
-            temperature=0.0,
-            max_completion_tokens=24,
-        )
-        if not response:
-            detail = getattr(reasoning_client, "last_error", "") or "No response returned."
-            raise RuntimeError(detail)
-        return True, f"Connected. Model: {response.get('model_used', 'unknown')}"
-
-    response = reasoning_client._chat_json(
-        system_prompt,
-        user_prompt,
-        temperature=0.0,
-        max_tokens=24,
-    )
-    return True, f"Connected. Model: {response.get('model_used', 'unknown')}"
-
-
 def _inject_assistant_panel_mode_style(compact: bool) -> None:
     if compact:
         st.markdown(
@@ -439,6 +414,29 @@ def _inject_assistant_panel_mode_style(compact: bool) -> None:
     )
 
 
+def _test_llm_connection(reasoning_client: object, provider_name: str) -> Tuple[bool, str]:
+    system_prompt = 'Return JSON only with key "ok" and boolean value true.'
+    user_prompt = "Respond with the requested JSON."
+
+    if provider_name == "Groq":
+        response = reasoning_client._chat_json(
+            system_prompt,
+            user_prompt,
+            temperature=0.0,
+            max_completion_tokens=24,
+        )
+        if not response:
+            detail = getattr(reasoning_client, "last_error", "") or "No response returned."
+            raise RuntimeError(detail)
+        return True, f"Connected. Model: {response.get('model_used', 'unknown')}"
+
+    response = reasoning_client._chat_json(
+        system_prompt,
+        user_prompt,
+        temperature=0.0,
+        max_tokens=24,
+    )
+    return True, f"Connected. Model: {response.get('model_used', 'unknown')}"
 def _fmt_num(value: object) -> str:
     if value is None:
         return "N/A"
