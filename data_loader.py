@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set, Tuple
 
 import pandas as pd
 import requests
@@ -72,9 +72,42 @@ SECTOR_GROUPS: Dict[str, Dict[str, str]] = {
     "FDX": {"sector": "Industrials", "industry": "Integrated Freight"},
     "LMT": {"sector": "Industrials", "industry": "Aerospace"},
     "RTX": {"sector": "Industrials", "industry": "Aerospace"},
+    "BK": {"sector": "Financial Services", "industry": "Asset Management"},
+    "STT": {"sector": "Financial Services", "industry": "Asset Management"},
+    "NTRS": {"sector": "Financial Services", "industry": "Asset Management"},
+    "RJF": {"sector": "Financial Services", "industry": "Capital Markets"},
+    "TROW": {"sector": "Financial Services", "industry": "Asset Management"},
+    "BEN": {"sector": "Financial Services", "industry": "Asset Management"},
+    "ICE": {"sector": "Financial Services", "industry": "Capital Markets"},
+    "CME": {"sector": "Financial Services", "industry": "Capital Markets"},
+    "LPLA": {"sector": "Financial Services", "industry": "Capital Markets"},
+    "PYPL": {"sector": "Financial Services", "industry": "Credit Services"},
+    "COF": {"sector": "Financial Services", "industry": "Credit Services"},
+    "AIG": {"sector": "Financial Services", "industry": "Insurance"},
+    "ALL": {"sector": "Financial Services", "industry": "Insurance"},
+    "MET": {"sector": "Financial Services", "industry": "Insurance"},
+    "PRU": {"sector": "Financial Services", "industry": "Insurance"},
+    "LEHMQ": {"sector": "Financial Services", "industry": "Capital Markets"},
 }
 
 DEFAULT_UNIVERSE = list(SECTOR_GROUPS.keys())
+
+PROFILE_HINTS: Dict[str, Tuple[str, str]] = {
+    "lehman": ("Financial Services", "Capital Markets"),
+    "bear stearns": ("Financial Services", "Capital Markets"),
+    "countrywide": ("Financial Services", "Credit Services"),
+    "washington mutual": ("Financial Services", "Banks"),
+    "svb": ("Financial Services", "Banks"),
+    "silicon valley bank": ("Financial Services", "Banks"),
+}
+
+INDUSTRY_HINTS: List[Tuple[List[str], Tuple[str, str]]] = [
+    (["investment bank", "broker", "brokerage", "securities", "capital markets", "trading"], ("Financial Services", "Capital Markets")),
+    (["commercial bank", "retail bank", "bank", "bancorp", "depository"], ("Financial Services", "Banks")),
+    (["asset management", "wealth management", "fund manager"], ("Financial Services", "Asset Management")),
+    (["credit card", "consumer finance", "lending", "loan servicing"], ("Financial Services", "Credit Services")),
+    (["insurance", "underwriting", "reinsurance"], ("Financial Services", "Insurance")),
+]
 
 
 @dataclass
@@ -181,6 +214,67 @@ def fetch_company_profile(ticker: str) -> CompanyProfile:
     )
 
 
+def _norm_label(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (value or "").lower()).strip()
+
+
+def _token_set(value: str) -> Set[str]:
+    return {tok for tok in _norm_label(value).split() if len(tok) > 2}
+
+
+def _industry_family(industry: str) -> str:
+    low = _norm_label(industry)
+    if any(k in low for k in ["capital market", "broker", "securit", "investment"]):
+        return "capital_markets"
+    if any(k in low for k in ["bank", "depository"]):
+        return "banks"
+    if any(k in low for k in ["asset management", "wealth management", "fund"]):
+        return "asset_management"
+    if any(k in low for k in ["credit", "lending", "consumer finance"]):
+        return "credit"
+    if "insurance" in low:
+        return "insurance"
+    return "other"
+
+
+def _infer_sector_industry(
+    ticker: str,
+    name: str,
+    sector: str,
+    industry: str,
+    info: Dict[str, object],
+) -> Tuple[str, str]:
+    inferred_sector = str(sector or "Unknown")
+    inferred_industry = str(industry or "Unknown")
+    text = " ".join(
+        [
+            str(name or ""),
+            str(info.get("shortName") or ""),
+            str(info.get("longName") or ""),
+            str(info.get("longBusinessSummary") or ""),
+            str(info.get("industry") or ""),
+            str(info.get("sector") or ""),
+        ]
+    ).lower()
+
+    hint = PROFILE_HINTS.get(_norm_label(str(ticker)))
+    if hint:
+        inferred_sector, inferred_industry = hint
+
+    for phrase, mapped in PROFILE_HINTS.items():
+        if phrase in text:
+            inferred_sector, inferred_industry = mapped
+            break
+
+    if inferred_sector == "Unknown" or inferred_industry == "Unknown":
+        for terms, mapped in INDUSTRY_HINTS:
+            if any(term in text for term in terms):
+                inferred_sector, inferred_industry = mapped
+                break
+
+    return inferred_sector, inferred_industry
+
+
 @lru_cache(maxsize=128)
 def _fetch_financials_cached(ticker: str) -> Dict[str, pd.DataFrame]:
     stock = yf.Ticker(ticker)
@@ -215,6 +309,7 @@ def fetch_financials(ticker: str) -> Dict[str, pd.DataFrame]:
 
 def find_peer_companies(ticker: str, max_peers: int = 8) -> Dict[str, object]:
     base = fetch_company_profile(ticker)
+    base_info = _safe_info(base.ticker)
     base_sector = base.sector
     base_industry = base.industry
 
@@ -222,50 +317,93 @@ def find_peer_companies(ticker: str, max_peers: int = 8) -> Dict[str, object]:
         base_sector = SECTOR_GROUPS[base.ticker]["sector"]
         base_industry = SECTOR_GROUPS[base.ticker]["industry"]
 
-    peers: List[Dict[str, str]] = []
+    base_sector, base_industry = _infer_sector_industry(
+        base.ticker,
+        base.name,
+        base_sector,
+        base_industry,
+        base_info,
+    )
+    base_family = _industry_family(base_industry)
+    base_tokens = _token_set(base_industry)
+
+    scored: List[Tuple[int, Dict[str, object]]] = []
     for symbol in DEFAULT_UNIVERSE:
         if symbol == base.ticker:
             continue
-        metadata = SECTOR_GROUPS.get(symbol, {"sector": "Unknown", "industry": "Unknown"})
 
-        if metadata["industry"] == base_industry and base_industry != "Unknown":
-            match_type = "industry"
-        elif metadata["sector"] == base_sector and base_sector != "Unknown":
-            match_type = "sector"
+        metadata = SECTOR_GROUPS.get(symbol, {"sector": "Unknown", "industry": "Unknown"})
+        cand_sector = str(metadata.get("sector") or "Unknown")
+        cand_industry = str(metadata.get("industry") or "Unknown")
+        cand_family = _industry_family(cand_industry)
+        cand_tokens = _token_set(cand_industry)
+
+        score = 0
+        match_type = "none"
+        reason = "No match signal."
+
+        if base_industry != "Unknown" and cand_industry == base_industry:
+            score = 120
+            match_type = "industry_exact"
+            reason = f"Exact industry match: {cand_industry}"
+        elif base_family != "other" and cand_family == base_family:
+            score = 95
+            match_type = "business_model"
+            reason = f"Similar business model family: {cand_family.replace('_', ' ')}"
+        elif base_sector != "Unknown" and cand_sector == base_sector:
+            score = 65
+            match_type = "sector_match"
+            reason = f"Same sector: {cand_sector}"
         else:
             continue
 
-        peers.append(
-            {
-                "ticker": symbol,
-                "name": symbol,
-                "sector": metadata["sector"],
-                "industry": metadata["industry"],
-                "match_type": match_type,
-            }
-        )
-        if len(peers) >= max_peers:
-            break
+        token_overlap = len(base_tokens.intersection(cand_tokens))
+        score += min(12, token_overlap * 4)
+
+        if base_family == "capital_markets" and cand_family in {"capital_markets", "asset_management"}:
+            score += 8
+            if match_type != "industry_exact":
+                match_type = "business_model"
+                reason = "Capital-markets business model overlap"
+
+        row: Dict[str, object] = {
+            "ticker": symbol,
+            "name": symbol,
+            "sector": cand_sector,
+            "industry": cand_industry,
+            "match_type": match_type,
+            "match_reason": reason,
+            "match_score": score,
+        }
+        scored.append((score, row))
+
+    scored.sort(key=lambda x: (-x[0], x[1]["ticker"]))
+    peers = [row for _, row in scored[:max_peers]]
 
     if not peers:
+        fallback_rows: List[Dict[str, object]] = []
         for symbol in DEFAULT_UNIVERSE:
             if symbol == base.ticker:
                 continue
             metadata = SECTOR_GROUPS.get(symbol, {"sector": "Unknown", "industry": "Unknown"})
-            peers.append(
+            fallback_rows.append(
                 {
                     "ticker": symbol,
                     "name": symbol,
                     "sector": metadata["sector"],
                     "industry": metadata["industry"],
                     "match_type": "fallback",
+                    "match_reason": "Fallback universe used due limited profile metadata.",
+                    "match_score": 1,
                 }
             )
-            if len(peers) >= max_peers:
+            if len(fallback_rows) >= max_peers:
                 break
+        peers = fallback_rows
 
     return {
         "sector": base_sector,
         "industry": base_industry,
+        "industry_family": base_family,
         "peers": peers,
     }

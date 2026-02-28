@@ -463,8 +463,20 @@ def _fetch_tavily_intelligence(tavily_client: TavilyClient, company_name: str, t
         return {
             "macro_stress_score": 50.0,
             "macro_notes": ["Macro intelligence unavailable (no Tavily key)."],
+            "micro_notes": ["Micro/company intelligence unavailable (no Tavily key)."],
+            "industry_notes": ["Industry intelligence unavailable (no Tavily key)."],
+            "news_notes": ["News intelligence unavailable (no Tavily key)."],
             "qual_snippets": [],
             "sources": [],
+            "source_groups": {
+                "macro": [],
+                "qualitative": [],
+                "strategy": [],
+                "failure_check": [],
+                "micro": [],
+                "industry": [],
+                "news": [],
+            },
             "strategy_notes": [],
             "failure_check": {"answer": "", "snippets": [], "sources": []},
         }
@@ -473,11 +485,17 @@ def _fetch_tavily_intelligence(tavily_client: TavilyClient, company_name: str, t
     qual_query = f"{company_name} {ticker} liquidity risk covenant breach restructuring distress signals"
     strategy_query = f"Survivor strategies for stressed {industry} companies that avoided collapse"
     failure_query = f"Did {company_name} {ticker} fail: chapter 11 bankruptcy liquidation insolvency collapse"
+    micro_query = f"{company_name} {ticker} management execution leverage liquidity funding governance breakdown"
+    industry_query = f"{industry} industry structure regulation competitive pressure and consolidation risk"
+    news_query = f"{company_name} {ticker} timeline of events and major news before distress or failure"
 
     macro_result = tavily_client.search(macro_query, max_results=4)
     qual_result = tavily_client.search(qual_query, max_results=5)
     strategy_result = tavily_client.search(strategy_query, max_results=4)
     failure_result = tavily_client.search(failure_query, max_results=5)
+    micro_result = tavily_client.search(micro_query, max_results=4)
+    industry_result = tavily_client.search(industry_query, max_results=4)
+    news_result = tavily_client.search(news_query, max_results=5)
 
     macro_text = " ".join([macro_result.answer, *macro_result.snippets]).lower()
     macro_score = 32.0
@@ -501,12 +519,43 @@ def _fetch_tavily_intelligence(tavily_client: TavilyClient, company_name: str, t
 
     qual_snippets = [_clean_snippet(s, 320) for s in qual_result.snippets if str(s).strip()]
     qual_snippets = [s for s in qual_snippets if len(s) >= 40][:8]
+    macro_notes = [_clean_snippet(macro_result.answer, 220)] + [_clean_snippet(s, 220) for s in macro_result.snippets[:3]]
+    micro_notes = [_clean_snippet(micro_result.answer, 220)] + [_clean_snippet(s, 220) for s in micro_result.snippets[:3]]
+    industry_notes = [_clean_snippet(industry_result.answer, 220)] + [_clean_snippet(s, 220) for s in industry_result.snippets[:3]]
+    news_notes = [_clean_snippet(news_result.answer, 220)] + [_clean_snippet(s, 220) for s in news_result.snippets[:4]]
+
+    macro_notes = [x for x in macro_notes if x]
+    micro_notes = [x for x in micro_notes if x]
+    industry_notes = [x for x in industry_notes if x]
+    news_notes = [x for x in news_notes if x]
 
     return {
         "macro_stress_score": max(0.0, min(100.0, macro_score)),
-        "macro_notes": [macro_result.answer] + macro_result.snippets[:3],
+        "macro_notes": macro_notes,
+        "micro_notes": micro_notes,
+        "industry_notes": industry_notes,
+        "news_notes": news_notes,
         "qual_snippets": qual_snippets,
-        "sources": list(dict.fromkeys(macro_result.sources + qual_result.sources + strategy_result.sources + failure_result.sources)),
+        "sources": list(
+            dict.fromkeys(
+                macro_result.sources
+                + qual_result.sources
+                + strategy_result.sources
+                + failure_result.sources
+                + micro_result.sources
+                + industry_result.sources
+                + news_result.sources
+            )
+        ),
+        "source_groups": {
+            "macro": list(dict.fromkeys(macro_result.sources)),
+            "qualitative": list(dict.fromkeys(qual_result.sources)),
+            "strategy": list(dict.fromkeys(strategy_result.sources)),
+            "failure_check": list(dict.fromkeys(failure_result.sources)),
+            "micro": list(dict.fromkeys(micro_result.sources)),
+            "industry": list(dict.fromkeys(industry_result.sources)),
+            "news": list(dict.fromkeys(news_result.sources)),
+        },
         "strategy_notes": [strategy_result.answer] if strategy_result.answer else [],
         "failure_check": {
             "answer": failure_result.answer,
@@ -783,6 +832,66 @@ def _render_glossary_panel() -> None:
     )
 
 
+def _render_workflow_trace(
+    *,
+    profile_name: str,
+    ticker: str,
+    failed: bool,
+    failure_status: Dict[str, object],
+    peers: Dict[str, object],
+    survivor_tickers: List[str],
+    intelligence: Dict[str, object],
+    reasoning: Dict[str, object],
+) -> None:
+    st.markdown("### SignalForge Workflow")
+    st.caption("End-to-end execution trace from input to final recommendations.")
+
+    with st.expander("1) Input + Entity Resolution", expanded=False):
+        st.write(f"- Input resolved to: **{profile_name} ({ticker})**")
+        st.write(f"- Target matching profile: sector `{peers.get('sector', 'Unknown')}`, industry `{peers.get('industry', 'Unknown')}`")
+
+    with st.expander("2) Evidence Gathering (Web Intelligence)", expanded=True):
+        st.write("- We gather macro, micro, industry, strategy, and failure-check signals with Tavily.")
+        source_groups = dict(intelligence.get("source_groups", {}) or {})
+        labels = {
+            "macro": "Macro",
+            "micro": "Micro (Company)",
+            "industry": "Industry",
+            "news": "News",
+            "failure_check": "Failure Check",
+            "strategy": "Strategy",
+            "qualitative": "Qualitative",
+        }
+        for key in ["macro", "micro", "industry", "news", "failure_check", "strategy", "qualitative"]:
+            st.write(f"**{labels[key]} Sources**")
+            urls = list(source_groups.get(key, []) or [])
+            if not urls:
+                st.write("- No source captured")
+            else:
+                for url in urls[:4]:
+                    st.write(f"- {url}")
+
+    with st.expander("3) Failure Verification Gate", expanded=False):
+        st.write(f"- Classified as failed/distressed: **{failed}**")
+        st.write(f"- Confidence: **{float(failure_status.get('confidence', 0.0))*100:.1f}%**")
+        st.write(f"- Model: `{failure_status.get('model_used', 'fallback')}`")
+        st.write(f"- Rationale: {str(failure_status.get('reason', ''))}")
+
+    with st.expander("4) Peer + Survivor Benchmarking", expanded=False):
+        st.write(f"- Peer model family: `{peers.get('industry_family', 'other')}`")
+        st.write(f"- Selected survivor cohort: **{', '.join(survivor_tickers)}**")
+        st.write("- Survivors are prioritized by business-model similarity + lower observed risk score.")
+
+    with st.expander("5) Scoring + Counterfactual Twin", expanded=False):
+        st.write("- Compute layered stress + composite risk score.")
+        st.write("- Replace failing metrics with survivor averages to simulate prevention pathway.")
+
+    with st.expander("6) Strategy Synthesis", expanded=False):
+        st.write("- Final recommendations combine deterministic metric gaps + Groq narrative synthesis.")
+        for item in list(reasoning.get("prevention_measures", []) or [])[:3]:
+            st.write(f"- {item}")
+
+
 def _chat_bubble(text: str, role: str) -> str:
     safe = html.escape(text or "")
     if role == "assistant":
@@ -839,6 +948,59 @@ def _strengthen_reasoning(
     return out
 
 
+def _first_note(notes: List[str], fallback: str) -> str:
+    for n in notes:
+        text = str(n or "").strip()
+        if text:
+            return text
+    return fallback
+
+
+def _compose_failure_narrative(
+    *,
+    company_name: str,
+    industry: str,
+    reasoning: Dict[str, object],
+    layers: Dict[str, Dict[str, object]],
+    intelligence: Dict[str, object],
+) -> str:
+    drivers = [str(x).strip() for x in list(reasoning.get("failure_drivers", []) or []) if str(x).strip()]
+    top_driver_text = ", ".join(drivers[:3]) if drivers else "persistent balance-sheet and operating stress"
+
+    macro_signal = _first_note(
+        list(intelligence.get("macro_notes", []) or []),
+        "Macro stress remained elevated with tighter credit and weaker demand conditions.",
+    )
+    micro_signal = _first_note(
+        list(intelligence.get("micro_notes", []) or []),
+        "Company-specific execution and funding risks compounded financial pressure.",
+    )
+    industry_signal = _first_note(
+        list(intelligence.get("industry_notes", []) or []),
+        f"{industry} conditions became less forgiving as competition and funding pressure intensified.",
+    )
+
+    leadership_keywords = ["management", "leadership", "governance", "execution", "strategy", "oversight"]
+    micro_blob = " ".join(list(intelligence.get("micro_notes", []) or []) + list(intelligence.get("news_notes", []) or [])).lower()
+    leadership_sentence = (
+        "Leadership and execution signals suggest strategic decisions did not correct risk early enough."
+        if any(k in micro_blob for k in leadership_keywords)
+        else "Execution risk appears to have reinforced the downside once stress started building."
+    )
+
+    macro_layer = ", ".join(list(layers.get("macro", {}).get("signals", []))[:2]) or "macro stress stayed elevated"
+    financial_layer = ", ".join(list(layers.get("financial_health", {}).get("signals", []))[:2]) or "financial fragility widened"
+
+    return (
+        f"{company_name} failed because {top_driver_text}. "
+        f"At a system level, {macro_layer}; inside the company, {financial_layer}. "
+        f"{leadership_sentence} "
+        f"Macro news signal: {macro_signal} "
+        f"Micro/company signal: {micro_signal} "
+        f"Industry signal: {industry_signal}"
+    )
+
+
 def _build_report_bundle(
     profile_name: str,
     ticker: str,
@@ -849,11 +1011,13 @@ def _build_report_bundle(
     survivor_tickers: List[str],
     metric_gaps: Dict[str, object],
     qual_summary: Optional[Dict[str, Any]] = None,
+    failure_narrative: str = "",
 ) -> Tuple[str, str]:
     payload = {
         "generated_at": datetime.utcnow().isoformat() + "Z",
         "company": {"name": profile_name, "ticker": ticker, "failed": failed},
         "summary": reasoning,
+        "failure_narrative": failure_narrative,
         "scores": {
             "failing_risk_score": failing_risk_score,
             "adjusted_risk_score": simulation.get("adjusted_score"),
@@ -887,6 +1051,8 @@ def _build_report_bundle(
     ]
     for item in reasoning.get("failure_drivers", [])[:3]:
         md.append(f"- {item}")
+    if failure_narrative:
+        md.extend(["", failure_narrative])
     md.extend(["", "## What Survivors Did Differently"])
     for item in reasoning.get("survivor_differences", [])[:3]:
         md.append(f"- {item}")
@@ -923,6 +1089,7 @@ def _qa_context_from_report(
     local_before_prob: float,
     local_after_prob: float,
     qual_summary: Optional[Dict[str, Any]] = None,
+    intelligence: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     key_metrics = ["debt_to_equity", "current_ratio", "cash_burn", "revenue_growth", "revenue"]
     fail_core = {k: failing_metrics.get(k) for k in key_metrics}
@@ -967,6 +1134,12 @@ def _qa_context_from_report(
                 "theme_scores": (qual_summary or {}).get("theme_scores", {}),
                 "theme_mentions": (qual_summary or {}).get("themes", {}),
                 "top_keywords": (qual_summary or {}).get("keywords", [])[:10],
+            },
+            "macro_micro_industry_news_signals": {
+                "macro": list((intelligence or {}).get("macro_notes", []) or [])[:5],
+                "micro": list((intelligence or {}).get("micro_notes", []) or [])[:5],
+                "industry": list((intelligence or {}).get("industry_notes", []) or [])[:5],
+                "news": list((intelligence or {}).get("news_notes", []) or [])[:5],
             },
         },
     }
@@ -1054,6 +1227,7 @@ def main() -> None:
     if use_cache:
         bundle = cached["bundle"]
         profile = bundle["profile"]
+        peers = bundle.get("peers", {"sector": profile.sector, "industry": profile.industry, "peers": []})
         intelligence = bundle["intelligence"]
         failure_status = bundle["failure_status"]
         failed = bundle["failed"]
@@ -1127,8 +1301,28 @@ def main() -> None:
             st.error("Unable to collect peer data.")
             return
 
-        better = sorted([x for x in peer_rows if x["risk_score"] < failing_risk_score], key=lambda x: x["risk_score"])
-        survivor_rows = better[:survivor_count] if better else sorted(peer_rows, key=lambda x: x["risk_score"])[:survivor_count]
+        peer_meta = {str(p.get("ticker")): p for p in peers.get("peers", [])}
+        for row in peer_rows:
+            meta = peer_meta.get(str(row.get("ticker")), {})
+            row["match_type"] = str(meta.get("match_type", "fit"))
+            row["match_reason"] = str(meta.get("match_reason", "Peer fit"))
+            try:
+                row["match_score"] = float(meta.get("match_score", 0))
+            except (TypeError, ValueError):
+                row["match_score"] = 0.0
+
+        better = sorted(
+            [x for x in peer_rows if x["risk_score"] < failing_risk_score],
+            key=lambda x: (x["risk_score"], -float(x.get("match_score", 0.0))),
+        )
+        survivor_rows = (
+            better[:survivor_count]
+            if better
+            else sorted(
+                peer_rows,
+                key=lambda x: (x["risk_score"], -float(x.get("match_score", 0.0))),
+            )[:survivor_count]
+        )
 
         survivor_tickers = [x["ticker"] for x in survivor_rows]
         survivor_metrics = [x["metrics"] for x in survivor_rows]
@@ -1154,7 +1348,13 @@ def main() -> None:
             metric_gaps=comparison["metric_gaps"],
             simulation=simulation,
             recommendations=recommendations,
-            tavily_notes=intelligence["macro_notes"] + intelligence["strategy_notes"],
+            tavily_notes=(
+                intelligence["macro_notes"]
+                + intelligence["micro_notes"]
+                + intelligence["industry_notes"]
+                + intelligence["news_notes"]
+                + intelligence["strategy_notes"]
+            ),
         )
 
         local_before = local_model.predict(failing_metrics, macro_stress_score, qualitative_intensity)
@@ -1180,6 +1380,7 @@ def main() -> None:
             "cache_key": cache_key,
             "bundle": {
                 "profile": profile,
+                "peers": peers,
                 "intelligence": intelligence,
                 "failure_status": failure_status,
                 "failed": failed,
@@ -1222,6 +1423,14 @@ def main() -> None:
         st.session_state["analysis_active"] = False
         return
 
+    failure_narrative = _compose_failure_narrative(
+        company_name=profile.name,
+        industry=profile.industry,
+        reasoning=reasoning,
+        layers=layers,
+        intelligence=intelligence,
+    )
+
     report_json, report_md = _build_report_bundle(
         profile.name,
         profile.ticker,
@@ -1232,6 +1441,7 @@ def main() -> None:
         survivor_tickers,
         comparison["metric_gaps"],
         qual,
+        failure_narrative,
     )
 
     st.markdown("---")
@@ -1290,6 +1500,24 @@ def main() -> None:
         st.markdown("#### Why It Failed")
         for item in reasoning.get("failure_drivers", [])[:3]:
             st.write(f"- {item}")
+        st.markdown(f"<div class='explain'>{failure_narrative}</div>", unsafe_allow_html=True)
+
+        st.markdown("#### Signal Board (Macro, Micro, Industry, News)")
+        sig_cols = st.columns(4)
+        signal_groups = [
+            ("Macro", intelligence.get("macro_notes", [])),
+            ("Micro", intelligence.get("micro_notes", [])),
+            ("Industry", intelligence.get("industry_notes", [])),
+            ("News", intelligence.get("news_notes", [])),
+        ]
+        for col, (title, notes) in zip(sig_cols, signal_groups):
+            col.markdown(f"**{title}**")
+            lines = [str(x).strip() for x in list(notes or []) if str(x).strip()]
+            if not lines:
+                col.write("- No signal captured")
+            else:
+                for line in lines[:2]:
+                    col.write(f"- {line}")
 
         st.markdown("#### How It Could Have Been Prevented")
         for item in reasoning.get("prevention_measures", [])[:3]:
@@ -1302,7 +1530,25 @@ def main() -> None:
         a3.metric("Macro Stress", f"{macro_stress_score:.1f}")
         a4.metric("Local Post-Fix", f"{local_after.risk_probability*100:.1f}%")
 
-        st.markdown(f"**Survivor Cohort:** {', '.join(survivor_tickers)}")
+        peer_meta = {str(p.get("ticker")): p for p in peers.get("peers", [])}
+        cohort_text = []
+        for row in survivor_rows:
+            ticker = str(row.get("ticker", ""))
+            meta = peer_meta.get(ticker, {})
+            match_type = str(meta.get("match_type", row.get("match_type", "fit"))).replace("_", " ")
+            cohort_text.append(f"{ticker} ({match_type})")
+        st.markdown(f"**Survivor Cohort:** {', '.join(cohort_text) if cohort_text else ', '.join(survivor_tickers)}")
+        st.caption(
+            f"Peer matching target: sector `{peers.get('sector', 'Unknown')}`, "
+            f"industry `{peers.get('industry', 'Unknown')}`, "
+            f"family `{peers.get('industry_family', 'other')}`."
+        )
+        with st.expander("Why these survivors were selected", expanded=False):
+            for row in survivor_rows:
+                ticker = str(row.get("ticker", ""))
+                meta = peer_meta.get(ticker, {})
+                reason = str(meta.get("match_reason", row.get("match_reason", "Peer fit")))
+                st.write(f"- {ticker}: {reason}")
 
         st.markdown("#### Core Metrics")
         t1, t2 = st.columns(2)
@@ -1454,9 +1700,34 @@ def main() -> None:
                 st.write(f"- {note}")
 
     with tabs[4]:
+        _render_workflow_trace(
+            profile_name=profile.name,
+            ticker=profile.ticker,
+            failed=failed,
+            failure_status=failure_status,
+            peers=peers,
+            survivor_tickers=survivor_tickers,
+            intelligence=intelligence,
+            reasoning=reasoning,
+        )
+
         st.markdown("### Failure Verification Evidence")
         st.write(str(intelligence["failure_check"]["answer"]))
         for line in intelligence["failure_check"]["snippets"][:6]:
+            st.write(f"- {line}")
+
+        st.markdown("### Macro / Micro / Industry / News Signals")
+        st.write("**Macro**")
+        for line in list(intelligence.get("macro_notes", []) or [])[:3]:
+            st.write(f"- {line}")
+        st.write("**Micro (Company-Specific)**")
+        for line in list(intelligence.get("micro_notes", []) or [])[:3]:
+            st.write(f"- {line}")
+        st.write("**Industry Knowledge**")
+        for line in list(intelligence.get("industry_notes", []) or [])[:3]:
+            st.write(f"- {line}")
+        st.write("**News Timeline Signals**")
+        for line in list(intelligence.get("news_notes", []) or [])[:3]:
             st.write(f"- {line}")
 
         st.markdown("### NLP Evidence Digest")
@@ -1501,6 +1772,7 @@ def main() -> None:
         local_before_prob=local_before.risk_probability,
         local_after_prob=local_after.risk_probability,
         qual_summary=qual,
+        intelligence=intelligence,
     )
 
     if not st.session_state.get("assistant_open", False):
