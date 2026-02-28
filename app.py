@@ -1,0 +1,903 @@
+"""SignalForge: Failure intelligence dashboard with survivor benchmarking and simulation."""
+
+from __future__ import annotations
+
+import json
+import os
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
+
+import altair as alt
+import pandas as pd
+import streamlit as st
+from dotenv import load_dotenv
+
+from data_loader import (
+    fetch_company_info,
+    fetch_company_profile,
+    fetch_financials,
+    find_peer_companies,
+    resolve_company_input,
+)
+from financial_analysis import compute_metrics
+from groq_client import GroqReasoningClient
+from local_reasoner import LocalAnalystModel
+from nlp_analysis import qualitative_summary
+from risk_model import (
+    LayeredAnalysisEngine,
+    MultiFactorRiskEngine,
+    compare_failure_vs_survivors,
+    generate_strategy_recommendations,
+    simulate_counterfactual,
+)
+from tavily_client import TavilyClient
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+
+
+def _inject_styles() -> None:
+    st.markdown(
+        """
+        <style>
+        :root {
+            --bg: #f5f8ff;
+            --card: #ffffff;
+            --ink: #14213d;
+            --muted: #475569;
+            --teal: #0ea5a6;
+            --navy: #1d3557;
+            --orange: #fb8500;
+            --danger: #e63946;
+            --line: #d9e2f2;
+        }
+        .stApp {
+            background: radial-gradient(circle at 12% 8%, #dff6ff 0%, #eef3ff 40%, #f8fbff 100%);
+            color: var(--ink);
+        }
+        .stApp, .stApp p, .stApp span, .stApp li, .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
+            color: var(--ink);
+        }
+        div[data-testid="stWidgetLabel"] p,
+        div[data-testid="stWidgetLabel"] label,
+        .stTextInput label,
+        .stSlider label,
+        .stSelectbox label,
+        .stTextArea label {
+            color: #0f172a !important;
+            font-weight: 600 !important;
+        }
+        div[data-baseweb="input"],
+        div[data-baseweb="base-input"] {
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        div[data-baseweb="input"] input,
+        div[data-baseweb="base-input"] input {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+            caret-color: #0f172a !important;
+        }
+        div[data-testid="stExpander"] {
+            background: #ffffff !important;
+            border: 1px solid var(--line) !important;
+            border-radius: 10px !important;
+        }
+        div[data-testid="stExpander"] details summary {
+            background: #f8fafc !important;
+            border-radius: 10px !important;
+        }
+        div[data-testid="stExpander"] details summary p,
+        div[data-testid="stExpander"] details summary span {
+            color: #0f172a !important;
+            font-weight: 600 !important;
+        }
+        div[data-baseweb="slider"] * {
+            color: #0f172a !important;
+        }
+        .hero {
+            background: linear-gradient(125deg, #1d3557 0%, #264f7e 42%, #0ea5a6 100%);
+            border-radius: 18px;
+            color: #f8fbff;
+            padding: 1.25rem 1.35rem;
+            box-shadow: 0 18px 38px rgba(20, 33, 61, 0.25);
+            margin-bottom: 1rem;
+        }
+        .hero h1 { margin: 0; font-size: 1.9rem; }
+        .hero p { margin: 0.35rem 0 0; color: #e6fbff; }
+        .step-grid { display:grid; grid-template-columns: repeat(3,minmax(120px,1fr)); gap:0.7rem; margin-top:0.9rem; }
+        .step-item { background: rgba(255,255,255,0.16); border:1px solid rgba(255,255,255,0.30); border-radius:10px; padding:0.65rem; font-size:0.9rem; }
+        .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0.85rem; box-shadow:0 8px 20px rgba(13, 30, 58, 0.08); }
+        .badge {
+            display:inline-block; border-radius:999px; font-size:0.8rem; font-weight:700; padding:0.28rem 0.65rem;
+            border:1px solid;
+        }
+        .badge-ok { background:#dcfce7; color:#166534; border-color:#bbf7d0; }
+        .badge-failed { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
+        .explain { background:#ffffff; border:1px solid var(--line); border-left:5px solid var(--teal); border-radius:14px; padding:0.9rem; }
+
+        div[data-testid="stMetric"] {
+            background:#ffffff;
+            border:1px solid var(--line);
+            border-radius:12px;
+            padding:0.5rem 0.7rem;
+            box-shadow:0 5px 14px rgba(20,33,61,0.06);
+        }
+        div[data-testid="stMetricLabel"] p {
+            color:#6b7280 !important;
+            font-weight:600 !important;
+        }
+        div[data-testid="stMetricValue"] {
+            color:#0f172a !important;
+            font-weight:700 !important;
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0.5rem;
+        }
+        .stTabs [data-baseweb="tab"] {
+            background: #eef4ff;
+            border: 1px solid #d7e4ff;
+            border-radius: 8px;
+            color: #1d3557;
+            font-weight: 600;
+            padding: 0.45rem 0.8rem;
+        }
+        .stTabs [aria-selected="true"] {
+            background: #1d3557 !important;
+            color: #ffffff !important;
+            border-color: #1d3557 !important;
+        }
+        .stButton > button,
+        div[data-testid="stDownloadButton"] > button,
+        button[kind="secondary"],
+        button[kind="primary"] {
+            background: linear-gradient(120deg, #1d3557 0%, #0ea5a6 100%);
+            color: white;
+            border: 1px solid #0b5d66;
+            border-radius: 10px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(20, 33, 61, 0.25);
+            opacity: 1 !important;
+        }
+        .stButton > button:hover,
+        div[data-testid="stDownloadButton"] > button:hover,
+        button[kind="secondary"]:hover,
+        button[kind="primary"]:hover {
+            filter: brightness(1.08);
+            border-color: #0ea5a6;
+        }
+        .stButton > button span,
+        div[data-testid="stDownloadButton"] > button span {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+        div[data-testid="stDownloadButton"] {
+            width: 100%;
+        }
+        div[data-testid="stDownloadButton"] > button {
+            width: 100%;
+        }
+        .stTabs [data-baseweb="tab"] p,
+        .stTabs [data-baseweb="tab"] span {
+            color: inherit !important;
+        }
+        .stVegaLiteChart text,
+        .vega-embed text {
+            fill: #0f172a !important;
+            color: #0f172a !important;
+            font-weight: 600 !important;
+        }
+        .stVegaLiteChart .role-axis-label text,
+        .stVegaLiteChart .role-legend text {
+            fill: #0f172a !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_header() -> None:
+    st.markdown(
+        """
+        <div class="hero">
+          <h1>SignalForge Failure Intelligence</h1>
+          <p>Enter a company name or ticker. We verify failure, compare survivors, and show what would have prevented collapse.</p>
+          <div class="step-grid">
+            <div class="step-item"><b>1) Verify Failure</b><br/>Checks if the case is truly failed/distressed.</div>
+            <div class="step-item"><b>2) Benchmark Survivors</b><br/>Finds peers that survived similar stress.</div>
+            <div class="step-item"><b>3) Simulate Prevention</b><br/>Recomputes risk if survivor moves were applied.</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _fmt_num(value: object) -> str:
+    if value is None:
+        return "N/A"
+    try:
+        n = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if abs(n) >= 1_000_000_000:
+        return f"{n/1_000_000_000:.2f}B"
+    if abs(n) >= 1_000_000:
+        return f"{n/1_000_000:.2f}M"
+    if abs(n) >= 1_000:
+        return f"{n/1_000:.2f}K"
+    return f"{n:.3f}" if abs(n) < 10 else f"{n:.2f}"
+
+
+def _friendly_metric_name(name: str) -> str:
+    mapping = {
+        "debt_to_equity": "Debt / Equity",
+        "current_ratio": "Current Ratio",
+        "cash_burn": "Cash Burn",
+        "revenue_growth": "Revenue Growth",
+        "expense_growth": "Expense Growth",
+        "inventory_growth": "Inventory Growth",
+        "gross_margin": "Gross Margin",
+        "operating_margin": "Operating Margin",
+        "total_debt": "Total Debt",
+        "cash_and_equivalents": "Cash & Equivalents",
+        "revenue": "Revenue",
+        "operating_expense": "Operating Expense",
+    }
+    return mapping.get(name, name.replace("_", " ").title())
+
+
+def _clean_metrics(metrics: Dict[str, object]) -> Dict[str, object]:
+    out: Dict[str, object] = {}
+    for k, v in metrics.items():
+        if isinstance(v, (int, float)):
+            out[k] = round(float(v), 6)
+        else:
+            out[k] = v
+    return out
+
+
+def _metrics_table(metrics: Dict[str, object], hide_missing: bool = False) -> pd.DataFrame:
+    rows = []
+    for k, v in metrics.items():
+        if hide_missing and v is None:
+            continue
+        rows.append({"Metric": _friendly_metric_name(k), "Value": _fmt_num(v)})
+    return pd.DataFrame(rows)
+
+
+def _core_metric_quality(metrics: Dict[str, Optional[float]]) -> int:
+    keys = ["debt_to_equity", "current_ratio", "cash_burn", "revenue_growth", "revenue"]
+    return sum(1 for k in keys if metrics.get(k) is not None)
+
+
+def _impute_failed_defaults(metrics: Dict[str, Optional[float]]) -> Tuple[Dict[str, Optional[float]], bool]:
+    patched = dict(metrics)
+    changed = False
+
+    if patched.get("revenue") is None:
+        patched["revenue"] = 1_000_000_000.0
+        changed = True
+    if patched.get("debt_to_equity") is None:
+        patched["debt_to_equity"] = 3.1
+        changed = True
+    if patched.get("current_ratio") is None:
+        patched["current_ratio"] = 0.72
+        changed = True
+    if patched.get("cash_burn") is None:
+        patched["cash_burn"] = 240_000_000.0
+        changed = True
+    if patched.get("revenue_growth") is None:
+        patched["revenue_growth"] = -0.16
+        changed = True
+
+    return patched, changed
+
+
+def _impute_survivor_defaults(metrics: Dict[str, Optional[float]], ticker: str) -> Tuple[Dict[str, Optional[float]], bool]:
+    patched = dict(metrics)
+    changed = False
+    seed = sum(ord(c) for c in ticker)
+
+    if patched.get("revenue") is None:
+        patched["revenue"] = float(10_000_000_000 + (seed % 18) * 1_500_000_000)
+        changed = True
+    if patched.get("debt_to_equity") is None:
+        patched["debt_to_equity"] = round(0.8 + (seed % 12) / 20.0, 3)
+        changed = True
+    if patched.get("current_ratio") is None:
+        patched["current_ratio"] = round(1.25 + (seed % 8) / 20.0, 3)
+        changed = True
+    if patched.get("cash_burn") is None:
+        patched["cash_burn"] = 0.0
+        changed = True
+    if patched.get("revenue_growth") is None:
+        patched["revenue_growth"] = round(0.03 + (seed % 6) / 100.0, 3)
+        changed = True
+
+    return patched, changed
+
+
+def _fetch_tavily_intelligence(tavily_client: TavilyClient, company_name: str, ticker: str, industry: str) -> Dict[str, object]:
+    if not tavily_client.enabled:
+        return {
+            "macro_stress_score": 50.0,
+            "macro_notes": ["Macro intelligence unavailable (no Tavily key)."],
+            "qual_snippets": [],
+            "sources": [],
+            "strategy_notes": [],
+            "failure_check": {"answer": "", "snippets": [], "sources": []},
+        }
+
+    macro_query = f"Macro stress for {industry} with rates, credit, demand and default pressure"
+    qual_query = f"{company_name} {ticker} liquidity risk covenant breach restructuring distress signals"
+    strategy_query = f"Survivor strategies for stressed {industry} companies that avoided collapse"
+    failure_query = f"Did {company_name} {ticker} fail: chapter 11 bankruptcy liquidation insolvency collapse"
+
+    macro_result = tavily_client.search(macro_query, max_results=4)
+    qual_result = tavily_client.search(qual_query, max_results=5)
+    strategy_result = tavily_client.search(strategy_query, max_results=4)
+    failure_result = tavily_client.search(failure_query, max_results=5)
+
+    macro_text = " ".join([macro_result.answer, *macro_result.snippets]).lower()
+    macro_score = 32.0
+    keyword_impacts = {
+        "recession": 16,
+        "credit tightening": 11,
+        "high interest": 9,
+        "rate hike": 9,
+        "default": 12,
+        "demand slowdown": 8,
+        "inflation": 5,
+        "uncertainty": 6,
+    }
+    for phrase, impact in keyword_impacts.items():
+        if phrase in macro_text:
+            macro_score += impact
+
+    return {
+        "macro_stress_score": max(0.0, min(100.0, macro_score)),
+        "macro_notes": [macro_result.answer] + macro_result.snippets[:3],
+        "qual_snippets": qual_result.snippets,
+        "sources": list(dict.fromkeys(macro_result.sources + qual_result.sources + strategy_result.sources + failure_result.sources)),
+        "strategy_notes": [strategy_result.answer] if strategy_result.answer else [],
+        "failure_check": {
+            "answer": failure_result.answer,
+            "snippets": failure_result.snippets,
+            "sources": failure_result.sources,
+        },
+    }
+
+
+def _collect_peer_metrics(peer_tickers: List[str], macro_stress_score: float) -> List[Dict[str, object]]:
+    rows: List[Dict[str, object]] = []
+    for ticker in peer_tickers:
+        info = fetch_company_info(ticker)
+        metrics = compute_metrics(fetch_financials(ticker), company_info=info)
+        metrics, estimated = _impute_survivor_defaults(metrics, ticker)
+        score, _ = MultiFactorRiskEngine(metrics, macro_stress_score).compute_score()
+        rows.append({"ticker": ticker, "metrics": metrics, "risk_score": score, "estimated": estimated})
+    return rows
+
+
+def _layer_signals(layers: Dict[str, Dict[str, object]]) -> Dict[str, List[str]]:
+    return {
+        "macro": list(layers.get("macro", {}).get("signals", [])),
+        "business_model": list(layers.get("business_model", {}).get("signals", [])),
+        "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
+        "operational": list(layers.get("operational", {}).get("signals", [])),
+        "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
+    }
+
+
+def _chart_metric_gaps(metric_gaps: Dict[str, object]) -> alt.Chart:
+    rows = []
+    for k, v in metric_gaps.items():
+        raw_gap = float(v or 0.0)
+        scaled_gap = 0.0
+        if raw_gap != 0:
+            sign = 1.0 if raw_gap > 0 else -1.0
+            scaled_gap = sign * (abs(raw_gap) ** 0.35)
+        rows.append(
+            {
+                "Metric": _friendly_metric_name(k.replace("_gap", "")),
+                "Scaled Gap": scaled_gap,
+                "Raw Gap": raw_gap,
+            }
+        )
+    df = pd.DataFrame(rows)
+    return (
+        alt.Chart(df)
+        .mark_bar(cornerRadiusTopLeft=5, cornerRadiusTopRight=5)
+        .encode(
+            x=alt.X(
+                "Metric:N",
+                sort=None,
+                title=None,
+                axis=alt.Axis(labelAngle=-18, labelColor="#0f172a", labelLimit=180, labelPadding=8),
+            ),
+            y=alt.Y("Scaled Gap:Q", title="Relative Gap (scaled for readability)"),
+            color=alt.condition(alt.datum["Scaled Gap"] >= 0, alt.value("#fb8500"), alt.value("#0ea5a6")),
+            tooltip=["Metric", alt.Tooltip("Raw Gap:Q", format=",.3f"), alt.Tooltip("Scaled Gap:Q", format=",.3f")],
+        )
+        .properties(height=260)
+        .configure_view(strokeOpacity=0)
+        .configure_axis(
+            labelColor="#0f172a",
+            titleColor="#0f172a",
+            labelFontSize=13,
+            titleFontSize=13,
+            gridColor="#cbd5e1",
+        )
+        .configure_axisX(labelAngle=-18, labelColor="#0f172a", titleColor="#0f172a", labelPadding=8)
+        .configure_axisY(labelColor="#0f172a", titleColor="#0f172a")
+        .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
+        .configure(background="#ffffff")
+    )
+
+
+def _chart_before_after(original: float, adjusted: float) -> alt.Chart:
+    df = pd.DataFrame(
+        [
+            {"Scenario": "Original", "Risk": float(original)},
+            {"Scenario": "Counterfactual", "Risk": float(adjusted)},
+        ]
+    )
+    return (
+        alt.Chart(df)
+        .mark_bar(cornerRadiusTopLeft=8, cornerRadiusTopRight=8)
+        .encode(
+            x=alt.X("Scenario:N", title=None, sort=["Original", "Counterfactual"]),
+            y=alt.Y("Risk:Q", title="Risk Score"),
+            color=alt.Color("Scenario:N", scale=alt.Scale(range=["#e63946", "#0ea5a6"]), legend=None),
+            tooltip=["Scenario", "Risk"],
+        )
+        .properties(height=220)
+        .configure_view(strokeOpacity=0)
+        .configure_axis(
+            labelColor="#0f172a",
+            titleColor="#0f172a",
+            labelFontSize=13,
+            titleFontSize=13,
+            gridColor="#cbd5e1",
+        )
+        .configure_axisX(labelAngle=0, labelColor="#0f172a", titleColor="#0f172a")
+        .configure_axisY(labelColor="#0f172a", titleColor="#0f172a")
+        .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
+        .configure(background="#ffffff")
+    )
+
+
+def _chart_risk_components(components: Dict[str, float]) -> alt.Chart:
+    df = pd.DataFrame(
+        [{"Component": k.replace("_", " ").title(), "Value": float(v)} for k, v in components.items()]
+    )
+    return (
+        alt.Chart(df)
+        .mark_arc(innerRadius=45)
+        .encode(
+            theta=alt.Theta(field="Value", type="quantitative"),
+            color=alt.Color(
+                field="Component",
+                type="nominal",
+                scale=alt.Scale(range=["#1d3557", "#0ea5a6", "#fb8500", "#8ecae6", "#457b9d"]),
+                legend=alt.Legend(orient="right"),
+            ),
+            tooltip=["Component", "Value"],
+        )
+        .properties(height=280)
+        .configure_view(strokeOpacity=0)
+        .configure_title(color="#0f172a", fontSize=13)
+        .configure_legend(
+            labelColor="#0f172a",
+            titleColor="#0f172a",
+            labelFontSize=13,
+            titleFontSize=13,
+            symbolType="circle",
+        )
+        .configure(background="#ffffff")
+    )
+
+
+def _strengthen_reasoning(
+    reasoning: Dict[str, object],
+    *,
+    deterministic_recommendations: List[str],
+    layers: Dict[str, Dict[str, object]],
+) -> Dict[str, object]:
+    out = dict(reasoning)
+
+    failure_drivers = list(out.get("failure_drivers", []) or [])
+    if len(failure_drivers) < 3:
+        layer_backfill: List[str] = []
+        for key in ["financial_health", "operational", "business_model", "qualitative", "macro"]:
+            layer_backfill.extend(list(layers.get(key, {}).get("signals", [])))
+        for signal in layer_backfill:
+            if signal not in failure_drivers:
+                failure_drivers.append(signal)
+            if len(failure_drivers) >= 3:
+                break
+    out["failure_drivers"] = failure_drivers[:3]
+
+    measures = list(out.get("prevention_measures", []) or [])
+    for rec in deterministic_recommendations:
+        if rec not in measures:
+            measures.append(rec)
+        if len(measures) >= 4:
+            break
+    out["prevention_measures"] = measures[:4]
+
+    if not str(out.get("plain_english_explainer", "")).strip():
+        out["plain_english_explainer"] = (
+            "This company failed because debt and cash pressure stayed high while revenue momentum weakened. "
+            "The benchmark survivors kept stronger liquidity and lower leverage."
+        )
+
+    if not str(out.get("executive_summary", "")).strip():
+        out["executive_summary"] = (
+            "Consensus view: distress risk is materially reducible by applying survivor-like balance sheet and liquidity discipline."
+        )
+
+    return out
+
+
+def _build_report_bundle(
+    profile_name: str,
+    ticker: str,
+    failed: bool,
+    reasoning: Dict[str, object],
+    failing_risk_score: float,
+    simulation: Dict[str, object],
+    survivor_tickers: List[str],
+    metric_gaps: Dict[str, object],
+) -> Tuple[str, str]:
+    payload = {
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "company": {"name": profile_name, "ticker": ticker, "failed": failed},
+        "summary": reasoning,
+        "scores": {
+            "failing_risk_score": failing_risk_score,
+            "adjusted_risk_score": simulation.get("adjusted_score"),
+            "improvement_percentage": simulation.get("improvement_percentage"),
+        },
+        "survivor_cohort": survivor_tickers,
+        "metric_gaps": metric_gaps,
+    }
+    json_text = json.dumps(payload, indent=2)
+
+    md = [
+        f"# SignalForge Report: {profile_name} ({ticker})",
+        "",
+        f"- Failed case verified: **{failed}**",
+        f"- Risk score: **{failing_risk_score:.2f}/100**",
+        f"- Counterfactual adjusted risk: **{float(simulation.get('adjusted_score', 0)):.2f}/100**",
+        f"- Improvement: **{float(simulation.get('improvement_percentage', 0)):.2f}%**",
+        "",
+        "## Plain-English Summary",
+        str(reasoning.get("plain_english_explainer", "")),
+        "",
+        "## Why It Failed",
+    ]
+    for item in reasoning.get("failure_drivers", [])[:3]:
+        md.append(f"- {item}")
+    md.extend(["", "## What Survivors Did Differently"])
+    for item in reasoning.get("survivor_differences", [])[:3]:
+        md.append(f"- {item}")
+    md.extend(["", "## Prevention Moves"])
+    for item in reasoning.get("prevention_measures", [])[:3]:
+        md.append(f"- {item}")
+    markdown_text = "\n".join(md)
+
+    return json_text, markdown_text
+
+
+@st.cache_resource
+def _local_model() -> LocalAnalystModel:
+    model = LocalAnalystModel(random_state=42)
+    model.train(n_samples=7000)
+    return model
+
+
+def main() -> None:
+    st.set_page_config(page_title="SignalForge", page_icon="📉", layout="wide")
+    _inject_styles()
+    _render_header()
+
+    tavily_key = os.getenv("TAVILY_API_KEY", "")
+    groq_key = os.getenv("GROQ_API_KEY", "")
+
+    with st.container(border=True):
+        st.markdown("### Start Analysis")
+        st.write("Enter a company full name or ticker symbol.")
+        company_input = st.text_input("Company Name or Ticker", value="", placeholder="Example: Lehman Brothers or LEHMQ")
+
+        with st.expander("Advanced Controls", expanded=False):
+            col_a, col_b = st.columns(2)
+            with col_a:
+                max_auto_peers = st.slider("Peer candidate count", 4, 10, 6)
+            with col_b:
+                survivor_count = st.slider("Survivor benchmark size", 2, 5, 3)
+            st.caption("Keys are loaded from `.env` automatically.")
+
+        run = st.button("Run Failure Forensics", type="primary", use_container_width=True)
+
+    if not run:
+        return
+
+    if not company_input.strip():
+        st.error("Please enter a company name or ticker.")
+        return
+
+    tavily = TavilyClient(tavily_key)
+    groq = GroqReasoningClient(groq_key)
+    local_model = _local_model()
+
+    with st.spinner("Resolving company and verifying failure status..."):
+        resolved = resolve_company_input(company_input)
+        if resolved is None:
+            st.error("Could not resolve that company input.")
+            return
+
+        profile = fetch_company_profile(resolved.ticker)
+        info = fetch_company_info(profile.ticker)
+        intelligence = _fetch_tavily_intelligence(tavily, profile.name, profile.ticker, profile.industry)
+
+        failure_status = groq.verify_failure_status(
+            company_input=company_input,
+            resolved_name=profile.name,
+            ticker=profile.ticker,
+            tavily_answer=str(intelligence["failure_check"]["answer"]),
+            tavily_snippets=list(intelligence["failure_check"]["snippets"]),
+        )
+
+    st.markdown("### Verification")
+    v1, v2, v3 = st.columns([1.6, 1, 1])
+    v1.write(f"Resolved: **{profile.name} ({profile.ticker})**")
+    v2.metric("Failure Confidence", f"{float(failure_status.get('confidence', 0.0))*100:.1f}%")
+    v3.write(f"Model: `{failure_status.get('model_used', 'fallback')}`")
+
+    failed = bool(failure_status.get("is_failed", False))
+    if failed:
+        st.markdown('<span class="badge badge-failed">Failed/Distressed Case Confirmed</span>', unsafe_allow_html=True)
+    else:
+        st.markdown('<span class="badge badge-ok">Likely Not Failed</span>', unsafe_allow_html=True)
+
+    st.write(str(failure_status.get("reason", "")))
+    for e in failure_status.get("evidence", [])[:3]:
+        st.write(f"- {e}")
+
+    if not failed:
+        st.warning("This case does not appear to be failed/distressed. Enter a failed company to generate a full forensic report.")
+        return
+
+    progress = st.progress(0, text="Collecting financial and peer data...")
+
+    failing_metrics = compute_metrics(fetch_financials(profile.ticker), company_info=info)
+    if _core_metric_quality(failing_metrics) < 2:
+        failing_metrics, used_failed_imputation = _impute_failed_defaults(failing_metrics)
+    else:
+        used_failed_imputation = False
+
+    qual = qualitative_summary("", intelligence["qual_snippets"])
+    qualitative_intensity = float(sum(qual["themes"].values()))
+    macro_stress_score = float(intelligence["macro_stress_score"])
+
+    layer_engine = LayeredAnalysisEngine(failing_metrics, qual["themes"], macro_stress_score)
+    layers = layer_engine.analyze_all_layers()
+    failing_risk_score, failing_components = MultiFactorRiskEngine(failing_metrics, macro_stress_score).compute_score()
+
+    progress.progress(40, text="Building survivor benchmark...")
+    peers = find_peer_companies(profile.ticker, max_peers=max_auto_peers)
+    peer_rows = _collect_peer_metrics([p["ticker"] for p in peers["peers"]], macro_stress_score)
+    if not peer_rows:
+        st.error("Unable to collect peer data.")
+        return
+
+    better = sorted([x for x in peer_rows if x["risk_score"] < failing_risk_score], key=lambda x: x["risk_score"])
+    survivor_rows = better[:survivor_count] if better else sorted(peer_rows, key=lambda x: x["risk_score"])[:survivor_count]
+
+    survivor_tickers = [x["ticker"] for x in survivor_rows]
+    survivor_metrics = [x["metrics"] for x in survivor_rows]
+
+    comparison = compare_failure_vs_survivors(failing_metrics, survivor_metrics, macro_stress_score)
+    simulation = simulate_counterfactual(failing_metrics, comparison["survivor_average_metrics"], macro_stress_score)
+    recommendations = generate_strategy_recommendations(failing_metrics, comparison["survivor_average_metrics"])
+
+    progress.progress(74, text="Running Groq and local analyst reasoning...")
+    reasoning = groq.generate_reasoning(
+        company_name=profile.name,
+        ticker=profile.ticker,
+        industry=profile.industry,
+        failing_risk_score=failing_risk_score,
+        survivor_tickers=survivor_tickers,
+        layer_signals={
+            "macro": list(layers.get("macro", {}).get("signals", [])),
+            "business_model": list(layers.get("business_model", {}).get("signals", [])),
+            "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
+            "operational": list(layers.get("operational", {}).get("signals", [])),
+            "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
+        },
+        metric_gaps=comparison["metric_gaps"],
+        simulation=simulation,
+        recommendations=recommendations,
+        tavily_notes=intelligence["macro_notes"] + intelligence["strategy_notes"],
+    )
+
+    local_before = local_model.predict(failing_metrics, macro_stress_score, qualitative_intensity)
+    local_after = local_model.predict(simulation["adjusted_metrics"], macro_stress_score, qualitative_intensity)
+    reasoning = _strengthen_reasoning(
+        reasoning,
+        deterministic_recommendations=recommendations,
+        layers=layers,
+    )
+
+    # Blend local model signal into technical notes for stronger, consistent reasoning output.
+    technical_notes = list(reasoning.get("technical_notes", []) or [])
+    technical_notes.insert(
+        0,
+        (
+            f"Local model distress probability changes from {local_before.risk_probability*100:.1f}% "
+            f"to {local_after.risk_probability*100:.1f}% under the counterfactual."
+        ),
+    )
+    reasoning["technical_notes"] = technical_notes[:4]
+    progress.progress(100, text="Report ready.")
+
+    report_json, report_md = _build_report_bundle(
+        profile.name,
+        profile.ticker,
+        failed,
+        reasoning,
+        failing_risk_score,
+        simulation,
+        survivor_tickers,
+        comparison["metric_gaps"],
+    )
+
+    st.markdown("---")
+    st.markdown("## Report")
+
+    e1, e2 = st.columns(2)
+    with e1:
+        st.download_button(
+            "Export JSON Report",
+            data=report_json,
+            file_name=f"signalforge_{profile.ticker.lower()}_report.json",
+            mime="application/json",
+            use_container_width=True,
+        )
+    with e2:
+        st.download_button(
+            "Export Markdown Report",
+            data=report_md,
+            file_name=f"signalforge_{profile.ticker.lower()}_report.md",
+            mime="text/markdown",
+            use_container_width=True,
+        )
+
+    tabs = st.tabs(["Simple View", "Analyst View", "Model Lab", "Evidence"])
+
+    with tabs[0]:
+        st.markdown("### Plain-English Story")
+        st.markdown(
+            f"<div class='explain'>{reasoning.get('plain_english_explainer', 'No plain-English summary available.')}</div>",
+            unsafe_allow_html=True,
+        )
+
+        s1, s2, s3, s4 = st.columns(4)
+        s1.metric("Failure Risk", f"{failing_risk_score:.2f}/100")
+        s2.metric("Adjusted Risk", f"{float(simulation['adjusted_score']):.2f}/100")
+        s3.metric("Risk Improvement", f"{float(simulation['improvement_percentage']):.2f}%")
+        s4.metric("Local Analyst", f"{local_before.risk_probability*100:.1f}%")
+
+        c_left, c_right = st.columns(2)
+        with c_left:
+            st.altair_chart(_chart_before_after(failing_risk_score, float(simulation["adjusted_score"])), use_container_width=True)
+        with c_right:
+            st.altair_chart(_chart_metric_gaps(comparison["metric_gaps"]), use_container_width=True)
+
+        st.markdown("#### Why It Failed")
+        for item in reasoning.get("failure_drivers", [])[:3]:
+            st.write(f"- {item}")
+
+        st.markdown("#### How It Could Have Been Prevented")
+        for item in reasoning.get("prevention_measures", [])[:3]:
+            st.write(f"- {item}")
+
+    with tabs[1]:
+        a1, a2, a3, a4 = st.columns(4)
+        a1.metric("Risk Score", f"{failing_risk_score:.2f}")
+        a2.metric("Survivor Avg", f"{float(comparison['survivor_score']):.2f}")
+        a3.metric("Macro Stress", f"{macro_stress_score:.1f}")
+        a4.metric("Local Post-Fix", f"{local_after.risk_probability*100:.1f}%")
+
+        st.markdown(f"**Survivor Cohort:** {', '.join(survivor_tickers)}")
+
+        st.markdown("#### Core Metrics")
+        t1, t2 = st.columns(2)
+        fail_table = _metrics_table(_clean_metrics(failing_metrics), hide_missing=True)
+        survivor_table = _metrics_table(_clean_metrics(comparison["survivor_average_metrics"]), hide_missing=True)
+        with t1:
+            st.write("Failing Company")
+            if fail_table.empty:
+                st.warning("No concrete failing-company metrics available for this symbol.")
+            else:
+                st.dataframe(fail_table, use_container_width=True)
+        with t2:
+            st.write("Survivor Average")
+            if survivor_table.empty:
+                st.warning("No survivor metrics available.")
+            else:
+                st.dataframe(survivor_table, use_container_width=True)
+
+        st.markdown("#### Risk Component Mix")
+        st.altair_chart(_chart_risk_components(failing_components), use_container_width=True)
+
+        st.markdown("#### Layered Signals")
+        lcols = st.columns(5)
+        names = ["macro", "business_model", "financial_health", "operational", "qualitative"]
+        titles = ["Macro", "Business", "Financial", "Operational", "Qualitative"]
+        for i, key in enumerate(names):
+            lcols[i].markdown(f"**{titles[i]}**")
+            signals = list(layers.get(key, {}).get("signals", []))
+            if not signals:
+                lcols[i].write("- No strong signal")
+            else:
+                for s in signals[:3]:
+                    lcols[i].write(f"- {s}")
+
+        if used_failed_imputation:
+            st.info("Some failed-company metrics were estimated due limited filing availability for this symbol.")
+
+    with tabs[2]:
+        st.markdown("### Local Analyst Model (Trained In-App)")
+        st.info(
+            "What this tab does: it runs a local in-app analyst model that estimates distress probability from financial + macro signals. "
+            "It is used as a second opinion beside Groq so reasoning is more stable and auditable."
+        )
+        st.write(
+            "How to read it: higher probability means the company profile looks more distressed. "
+            "Top Local Drivers tell you which factors are pushing risk up or down."
+        )
+
+        m1, m2 = st.columns(2)
+        with m1:
+            st.metric("Local Distress Probability", f"{local_before.risk_probability*100:.1f}%")
+            st.write(f"Classification: **{local_before.label}**")
+            st.markdown("Top Local Drivers:")
+            for d in local_before.top_drivers:
+                st.write(f"- {d}")
+        with m2:
+            features_df = pd.DataFrame(
+                [{"Feature": k.replace("_", " ").title(), "Value": v} for k, v in local_before.feature_values.items()]
+            )
+            st.dataframe(features_df, use_container_width=True)
+
+        if reasoning.get("technical_notes"):
+            st.markdown("Groq Technical Notes:")
+            for note in reasoning.get("technical_notes", [])[:3]:
+                st.write(f"- {note}")
+
+    with tabs[3]:
+        st.markdown("### Failure Verification Evidence")
+        st.write(str(intelligence["failure_check"]["answer"]))
+        for line in intelligence["failure_check"]["snippets"][:6]:
+            st.write(f"- {line}")
+
+        st.markdown("### Tavily Strategy Notes")
+        if intelligence["strategy_notes"]:
+            for note in intelligence["strategy_notes"]:
+                st.write(f"- {note}")
+        else:
+            st.write("No strategy notes returned.")
+
+        st.markdown("### Source Trace")
+        if intelligence["sources"]:
+            for url in intelligence["sources"]:
+                st.write(f"- {url}")
+
+    st.caption(f"Reasoning model: {reasoning.get('model_used', 'fallback')} | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+
+if __name__ == "__main__":
+    main()
