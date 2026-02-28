@@ -242,3 +242,41 @@ class GroqReasoningClient:
             return parsed
 
         return self._fallback(metric_gaps, recommendations)
+
+    def answer_report_question(
+        self,
+        *,
+        question: str,
+        report_context: Dict[str, Any],
+    ) -> Dict[str, str]:
+        """Answer user follow-up questions about the generated report."""
+        if not self.enabled:
+            return {
+                "answer": "Groq is unavailable, so interactive Q&A is running in fallback mode.",
+                "rationale": "The question could not be sent to the reasoning model.",
+                "caveat": "Enable GROQ_API_KEY for richer answers.",
+            }
+
+        system_prompt = (
+            "You are a senior restructuring analyst answering follow-up questions about a forensic report. "
+            "Respond in strict JSON with keys: answer, rationale, caveat. "
+            "Keep answer concise and actionable."
+        )
+        user_prompt = (
+            f"Question: {question}\n"
+            f"Report context JSON:\n{json.dumps(report_context)}"
+        )
+
+        parsed = self._chat_json(system_prompt, user_prompt, temperature=0.2)
+        if not parsed:
+            return {
+                "answer": "I could not generate a model-backed answer right now.",
+                "rationale": "The reasoning model request failed.",
+                "caveat": "Try again in a moment.",
+            }
+
+        return {
+            "answer": str(parsed.get("answer", "No answer returned.")),
+            "rationale": str(parsed.get("rationale", "No rationale returned.")),
+            "caveat": str(parsed.get("caveat", "")),
+        }

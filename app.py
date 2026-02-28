@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import altair as alt
 import pandas as pd
@@ -40,18 +40,18 @@ def _inject_styles() -> None:
         """
         <style>
         :root {
-            --bg: #f5f8ff;
-            --card: #ffffff;
-            --ink: #14213d;
-            --muted: #475569;
+            --bg: #d3dced;
+            --card: #edf2fb;
+            --ink: #0f172a;
+            --muted: #334155;
             --teal: #0ea5a6;
             --navy: #1d3557;
             --orange: #fb8500;
             --danger: #e63946;
-            --line: #d9e2f2;
+            --line: #b8c6df;
         }
         .stApp {
-            background: radial-gradient(circle at 12% 8%, #dff6ff 0%, #eef3ff 40%, #f8fbff 100%);
+            background: radial-gradient(circle at 12% 8%, #cad9ef 0%, #d5e0ef 45%, #c5d3e7 100%);
             color: var(--ink);
         }
         .stApp, .stApp p, .stApp span, .stApp li, .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
@@ -106,17 +106,28 @@ def _inject_styles() -> None:
         .hero p { margin: 0.35rem 0 0; color: #e6fbff; }
         .step-grid { display:grid; grid-template-columns: repeat(3,minmax(120px,1fr)); gap:0.7rem; margin-top:0.9rem; }
         .step-item { background: rgba(255,255,255,0.16); border:1px solid rgba(255,255,255,0.30); border-radius:10px; padding:0.65rem; font-size:0.9rem; }
-        .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0.85rem; box-shadow:0 8px 20px rgba(13, 30, 58, 0.08); }
+        .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0.85rem; box-shadow:0 8px 20px rgba(13, 30, 58, 0.12); }
+        .hint {
+            border-bottom: 1px dotted #0b5d66;
+            cursor: help;
+            font-weight: 600;
+        }
+        .wow {
+            background: linear-gradient(120deg, rgba(29,53,87,.12), rgba(14,165,166,.12));
+            border: 1px solid #9bb7d9;
+            border-radius: 12px;
+            padding: 0.7rem 0.8rem;
+        }
         .badge {
             display:inline-block; border-radius:999px; font-size:0.8rem; font-weight:700; padding:0.28rem 0.65rem;
             border:1px solid;
         }
         .badge-ok { background:#dcfce7; color:#166534; border-color:#bbf7d0; }
         .badge-failed { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
-        .explain { background:#ffffff; border:1px solid var(--line); border-left:5px solid var(--teal); border-radius:14px; padding:0.9rem; }
+        .explain { background:#eaf1fb; border:1px solid var(--line); border-left:5px solid var(--teal); border-radius:14px; padding:0.9rem; }
 
         div[data-testid="stMetric"] {
-            background:#ffffff;
+            background:#eaf1fb;
             border:1px solid var(--line);
             border-radius:12px;
             padding:0.5rem 0.7rem;
@@ -499,6 +510,103 @@ def _chart_risk_components(components: Dict[str, float]) -> alt.Chart:
     )
 
 
+def _chart_component_delta(failing_components: Dict[str, float], survivor_components: Dict[str, float]) -> alt.Chart:
+    rows = []
+    for key, fail_val in failing_components.items():
+        surv_val = float(survivor_components.get(key, 0.0))
+        rows.append(
+            {
+                "Component": key.replace("_", " ").title(),
+                "Delta": float(fail_val) - surv_val,
+                "Failing": float(fail_val),
+                "Survivor": surv_val,
+            }
+        )
+    df = pd.DataFrame(rows)
+    return (
+        alt.Chart(df)
+        .mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
+        .encode(
+            x=alt.X("Component:N", title=None, sort=None),
+            y=alt.Y("Delta:Q", title="Risk Delta (Failing - Survivor)"),
+            color=alt.condition(alt.datum.Delta >= 0, alt.value("#e63946"), alt.value("#10b981")),
+            tooltip=["Component", alt.Tooltip("Failing:Q", format=".3f"), alt.Tooltip("Survivor:Q", format=".3f"), "Delta"],
+        )
+        .properties(height=230)
+        .configure_view(strokeOpacity=0)
+        .configure_axis(labelColor="#0f172a", titleColor="#0f172a", labelFontSize=12, titleFontSize=12, gridColor="#cbd5e1")
+        .configure(background="#ffffff")
+    )
+
+
+def _chart_peer_positioning(
+    failing_ticker: str,
+    failing_metrics: Dict[str, Optional[float]],
+    failing_risk_score: float,
+    survivor_rows: List[Dict[str, object]],
+) -> alt.Chart:
+    rows = []
+    rows.append(
+        {
+            "Ticker": failing_ticker,
+            "Current Ratio": float(failing_metrics.get("current_ratio") or 0.01),
+            "Debt/Equity": float(failing_metrics.get("debt_to_equity") or 0.01),
+            "Risk Score": float(failing_risk_score),
+            "Group": "Failing",
+        }
+    )
+    for row in survivor_rows:
+        m = row.get("metrics", {})
+        rows.append(
+            {
+                "Ticker": str(row.get("ticker")),
+                "Current Ratio": float((m or {}).get("current_ratio") or 0.01),
+                "Debt/Equity": float((m or {}).get("debt_to_equity") or 0.01),
+                "Risk Score": float(row.get("risk_score") or 0.0),
+                "Group": "Survivor",
+            }
+        )
+
+    df = pd.DataFrame(rows)
+    return (
+        alt.Chart(df)
+        .mark_circle(size=170, opacity=0.85)
+        .encode(
+            x=alt.X("Current Ratio:Q", title="Current Ratio (higher is better)"),
+            y=alt.Y("Debt/Equity:Q", title="Debt/Equity (lower is better)"),
+            color=alt.Color("Group:N", scale=alt.Scale(range=["#e63946", "#0ea5a6"])),
+            size=alt.Size("Risk Score:Q", scale=alt.Scale(range=[80, 520])),
+            tooltip=["Ticker", "Group", alt.Tooltip("Current Ratio:Q", format=".2f"), alt.Tooltip("Debt/Equity:Q", format=".2f"), "Risk Score"],
+        )
+        .properties(height=280)
+        .configure_view(strokeOpacity=0)
+        .configure_axis(labelColor="#0f172a", titleColor="#0f172a", labelFontSize=12, titleFontSize=12, gridColor="#cbd5e1")
+        .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
+        .configure(background="#ffffff")
+    )
+
+
+def _glossary() -> Dict[str, str]:
+    return {
+        "Risk Score": "Composite 0-100 probability-like distress score built from debt, liquidity, growth, burn, and macro stress.",
+        "Current Ratio": "Current assets divided by current liabilities. Below 1 generally means tighter liquidity.",
+        "Debt/Equity": "Leverage ratio. Higher values indicate heavier debt burden relative to equity.",
+        "Cash Burn": "Cash consumed by operations. Lower burn is healthier under stress.",
+        "Counterfactual": "A simulated alternative world where the failing company adopts survivor-like metrics.",
+        "Model Lab": "Local in-app analyst model used as a second opinion to stabilize reasoning output.",
+    }
+
+
+def _render_glossary_panel() -> None:
+    glossary = _glossary()
+    st.markdown("#### Hover Glossary")
+    st.markdown(
+        " ".join(
+            [f"<span class='hint' title='{desc}'>{term}</span>" for term, desc in glossary.items()]
+        ),
+        unsafe_allow_html=True,
+    )
+
 def _strengthen_reasoning(
     reasoning: Dict[str, object],
     *,
@@ -775,10 +883,15 @@ def main() -> None:
             use_container_width=True,
         )
 
-    tabs = st.tabs(["Simple View", "Analyst View", "Model Lab", "Evidence"])
+    tabs = st.tabs(["Simple View", "Analyst View", "Scenario Lab", "Model Lab", "Evidence", "Ask Report"])
 
     with tabs[0]:
         st.markdown("### Plain-English Story")
+        st.markdown(
+            "<div class='wow'><b>Judge Highlight:</b> This engine combines forensic reconstruction, survivor benchmarking, and "
+            "counterfactual simulation in one flow.</div>",
+            unsafe_allow_html=True,
+        )
         st.markdown(
             f"<div class='explain'>{reasoning.get('plain_english_explainer', 'No plain-English summary available.')}</div>",
             unsafe_allow_html=True,
@@ -795,6 +908,8 @@ def main() -> None:
             st.altair_chart(_chart_before_after(failing_risk_score, float(simulation["adjusted_score"])), use_container_width=True)
         with c_right:
             st.altair_chart(_chart_metric_gaps(comparison["metric_gaps"]), use_container_width=True)
+
+        _render_glossary_panel()
 
         st.markdown("#### Why It Failed")
         for item in reasoning.get("failure_drivers", [])[:3]:
@@ -833,6 +948,21 @@ def main() -> None:
         st.markdown("#### Risk Component Mix")
         st.altair_chart(_chart_risk_components(failing_components), use_container_width=True)
 
+        st.markdown("#### Component Delta vs Survivors")
+        st.altair_chart(
+            _chart_component_delta(
+                comparison.get("failing_components", {}),
+                comparison.get("survivor_components", {}),
+            ),
+            use_container_width=True,
+        )
+
+        st.markdown("#### Peer Positioning Map")
+        st.altair_chart(
+            _chart_peer_positioning(profile.ticker, failing_metrics, failing_risk_score, survivor_rows),
+            use_container_width=True,
+        )
+
         st.markdown("#### Layered Signals")
         lcols = st.columns(5)
         names = ["macro", "business_model", "financial_health", "operational", "qualitative"]
@@ -850,6 +980,63 @@ def main() -> None:
             st.info("Some failed-company metrics were estimated due limited filing availability for this symbol.")
 
     with tabs[2]:
+        st.markdown("### Interactive Scenario Lab")
+        st.caption("Adjust strategic levers and instantly see simulated risk impact. Hover each control for meaning.")
+
+        s_col1, s_col2 = st.columns(2)
+        with s_col1:
+            dte = st.slider(
+                "Debt / Equity",
+                min_value=0.2,
+                max_value=6.0,
+                value=float(failing_metrics.get("debt_to_equity") or 3.1),
+                step=0.05,
+                help="Lower debt/equity usually reduces distress risk.",
+            )
+            cr = st.slider(
+                "Current Ratio",
+                min_value=0.3,
+                max_value=3.0,
+                value=float(failing_metrics.get("current_ratio") or 0.8),
+                step=0.05,
+                help="Higher current ratio indicates stronger short-term liquidity.",
+            )
+        with s_col2:
+            burn_m = st.slider(
+                "Annual Cash Burn ($M)",
+                min_value=0,
+                max_value=500,
+                value=int((failing_metrics.get("cash_burn") or 250_000_000.0) / 1_000_000),
+                step=5,
+                help="Lower cash burn generally improves resilience.",
+            )
+            rev_growth = st.slider(
+                "Revenue Growth",
+                min_value=-0.5,
+                max_value=0.4,
+                value=float(failing_metrics.get("revenue_growth") or -0.1),
+                step=0.01,
+                help="Higher growth improves demand-side resilience.",
+            )
+
+        custom_metrics = dict(failing_metrics)
+        custom_metrics["debt_to_equity"] = dte
+        custom_metrics["current_ratio"] = cr
+        custom_metrics["cash_burn"] = float(burn_m) * 1_000_000.0
+        custom_metrics["revenue_growth"] = rev_growth
+        if custom_metrics.get("revenue") is None:
+            custom_metrics["revenue"] = 1_000_000_000.0
+
+        custom_score, _ = MultiFactorRiskEngine(custom_metrics, macro_stress_score).compute_score()
+        custom_improvement = ((failing_risk_score - custom_score) / max(failing_risk_score, 1e-6)) * 100
+
+        c_metric1, c_metric2, c_metric3 = st.columns(3)
+        c_metric1.metric("Original Risk", f"{failing_risk_score:.2f}")
+        c_metric2.metric("Scenario Risk", f"{custom_score:.2f}")
+        c_metric3.metric("Scenario Improvement", f"{custom_improvement:.2f}%")
+        st.altair_chart(_chart_before_after(failing_risk_score, custom_score), use_container_width=True)
+
+    with tabs[3]:
         st.markdown("### Local Analyst Model (Trained In-App)")
         st.info(
             "What this tab does: it runs a local in-app analyst model that estimates distress probability from financial + macro signals. "
@@ -878,7 +1065,7 @@ def main() -> None:
             for note in reasoning.get("technical_notes", [])[:3]:
                 st.write(f"- {note}")
 
-    with tabs[3]:
+    with tabs[4]:
         st.markdown("### Failure Verification Evidence")
         st.write(str(intelligence["failure_check"]["answer"]))
         for line in intelligence["failure_check"]["snippets"][:6]:
@@ -895,6 +1082,38 @@ def main() -> None:
         if intelligence["sources"]:
             for url in intelligence["sources"]:
                 st.write(f"- {url}")
+
+    with tabs[5]:
+        st.markdown("### Ask This Report")
+        st.caption("Ask follow-up questions about the analysis. The answer uses the current report context.")
+        user_q = st.text_input(
+            "Your question",
+            value="What is the single highest-impact action to reduce distress fastest?",
+            help="Example: What assumption is most fragile? What should management do first in 90 days?",
+        )
+        ask = st.button("Answer My Question", use_container_width=True)
+        if ask and user_q.strip():
+            report_context: Dict[str, Any] = {
+                "company": {"name": profile.name, "ticker": profile.ticker},
+                "scores": {
+                    "failing_risk": failing_risk_score,
+                    "survivor_risk": comparison.get("survivor_score"),
+                    "adjusted_risk": simulation.get("adjusted_score"),
+                    "improvement": simulation.get("improvement_percentage"),
+                },
+                "recommendations": recommendations,
+                "failure_drivers": reasoning.get("failure_drivers", []),
+                "survivor_differences": reasoning.get("survivor_differences", []),
+                "technical_notes": reasoning.get("technical_notes", []),
+            }
+            answer = groq.answer_report_question(question=user_q, report_context=report_context)
+            st.markdown("**Answer**")
+            st.write(answer.get("answer", "No answer returned."))
+            st.markdown("**Rationale**")
+            st.write(answer.get("rationale", "No rationale returned."))
+            if answer.get("caveat"):
+                st.markdown("**Caveat**")
+                st.write(answer.get("caveat"))
 
     st.caption(f"Reasoning model: {reasoning.get('model_used', 'fallback')} | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
