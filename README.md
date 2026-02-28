@@ -1,4 +1,6 @@
-# SignalForge: Failure Intelligence Studio
+# Mo-Hit_Datathon
+
+## SignalForge: Failure Intelligence Studio
 
 SignalForge is a Streamlit app that verifies whether a company actually failed, benchmarks survivor peers, runs a digital twin counterfactual, and exports a polished analyst report.
 
