@@ -14,10 +14,21 @@ GAP_LABELS = {
     "revenue_growth_gap": "Revenue growth gap",
     "cash_burn_gap": "Cash burn gap",
 }
+from llm_prompts import (
+    ANSWER_REPORT_QUESTION_SYSTEM_PROMPT,
+    GENERATE_REASONING_SYSTEM_PROMPT,
+    VERIFY_FAILURE_STATUS_SYSTEM_PROMPT,
+    build_answer_report_question_user_prompt,
+    build_generate_reasoning_user_prompt,
+    build_verify_failure_status_inputs,
+    build_verify_failure_status_user_prompt,
+)
 
 
 class GroqReasoningClient:
     """Calls Groq chat completions and requests structured JSON output."""
+
+    _JSON_REPAIR_PROMPT = "Return ONLY valid JSON matching the schema. No commentary."
 
     def __init__(self, api_key: Optional[str], timeout_seconds: int = 35) -> None:
         self.api_key = (api_key or "").strip()
@@ -38,8 +49,12 @@ class GroqReasoningClient:
             return None
 
         cleaned = content.strip()
-        cleaned = re.sub(r"^```(?:json)?", "", cleaned).strip()
-        cleaned = re.sub(r"```$", "", cleaned).strip()
+        fenced_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", cleaned, flags=re.IGNORECASE)
+        if fenced_match:
+            cleaned = fenced_match.group(1).strip()
+        else:
+            cleaned = re.sub(r"^```(?:json)?", "", cleaned, flags=re.IGNORECASE).strip()
+            cleaned = re.sub(r"```$", "", cleaned).strip()
 
         try:
             parsed = json.loads(cleaned)
@@ -75,37 +90,41 @@ class GroqReasoningClient:
         }
 
         for model in self.models:
-            body = {
-                "model": model,
-                "temperature": temperature,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                "response_format": {"type": "json_object"},
-                "max_completion_tokens": max_completion_tokens,
-            }
-            try:
-                response = requests.post(
-                    self.endpoint,
-                    headers=headers,
-                    json=body,
-                    timeout=self.timeout_seconds,
-                )
-                response.raise_for_status()
-                content = (
-                    response.json()
-                    .get("choices", [{}])[0]
-                    .get("message", {})
-                    .get("content", "")
-                )
-                parsed = self._extract_json(str(content))
-                if parsed:
-                    parsed["model_used"] = model
-                    return parsed
-            except Exception as exc:
-                self.last_error = f"{model}: {type(exc).__name__}"
-                continue
+            attempt_user_prompt = user_prompt
+            for attempt in range(2):
+                body = {
+                    "model": model,
+                    "temperature": temperature,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": attempt_user_prompt},
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "max_completion_tokens": max_completion_tokens,
+                }
+                try:
+                    response = requests.post(
+                        self.endpoint,
+                        headers=headers,
+                        json=body,
+                        timeout=self.timeout_seconds,
+                    )
+                    response.raise_for_status()
+                    content = (
+                        response.json()
+                        .get("choices", [{}])[0]
+                        .get("message", {})
+                        .get("content", "")
+                    )
+                    parsed = self._extract_json(str(content))
+                    if parsed:
+                        parsed["model_used"] = model
+                        return parsed
+                    self.last_error = f"{model}: invalid JSON response"
+                    attempt_user_prompt = f"{user_prompt}\n\n{self._JSON_REPAIR_PROMPT}"
+                except Exception as exc:
+                    self.last_error = f"{model}: {type(exc).__name__}"
+                    break
 
         return None
 
@@ -118,12 +137,13 @@ class GroqReasoningClient:
         tavily_answer: str,
         tavily_snippets: List[str],
     ) -> Dict[str, Any]:
-        def _compact(text: str, max_len: int = 120) -> str:
-            t = " ".join((text or "").split())
-            return t[:max_len]
-
-        curated_snippets = [_compact(s, 120) for s in tavily_snippets if str(s).strip()][:2]
-        combined = "\n".join([_compact(tavily_answer, 160), *curated_snippets])
+        curated_snippets, combined = build_verify_failure_status_inputs(
+            company_input=company_input,
+            resolved_name=resolved_name,
+            ticker=ticker,
+            tavily_answer=tavily_answer,
+            tavily_snippets=tavily_snippets,
+        )
         combined_lower = combined.lower()
         failed_patterns = [
             r"\bfiled for chapter 11\b",
@@ -157,17 +177,12 @@ class GroqReasoningClient:
                 "model_used": "fallback",
             }
 
-        system_prompt = (
-            "Classify company status. Return JSON only with keys: "
-            "is_failed (bool), status_label (failed|not_failed|unclear), "
-            "confidence (0-1), reason (<=20 words), evidence (<=3 short bullets)."
-        )
-        user_prompt = (
-            "Determine if this company is a failed/distressed case (bankruptcy, liquidation, major collapse, or insolvency event). "
-            f"Company input: {company_input}\n"
-            f"Resolved name: {resolved_name}\n"
-            f"Ticker: {ticker}\n"
-            f"Web evidence:\n{combined}"
+        system_prompt = VERIFY_FAILURE_STATUS_SYSTEM_PROMPT
+        user_prompt = build_verify_failure_status_user_prompt(
+            company_input=company_input,
+            resolved_name=resolved_name,
+            ticker=ticker,
+            combined_evidence=combined,
         )
 
         parsed = self._chat_json(system_prompt, user_prompt, temperature=0.0, max_completion_tokens=96)
@@ -257,20 +272,8 @@ class GroqReasoningClient:
             "tavily_notes": tavily_notes[:5],
         }
 
-        system_prompt = (
-            "You are a distressed-company forensic strategist. "
-            "Return strict JSON with keys: "
-            "plain_english_explainer (string, easy language), "
-            "executive_summary (string), "
-            "failure_drivers (array of 3 short bullets), "
-            "survivor_differences (array of 3 short bullets), "
-            "prevention_measures (array of 3 concrete actions), "
-            "technical_notes (array of 3 concise technical bullets)."
-        )
-        user_prompt = (
-            "Analyze this failed company against survivor peers and produce clear prevention steps. "
-            f"Context JSON:\n{json.dumps(payload_context)}"
-        )
+        system_prompt = GENERATE_REASONING_SYSTEM_PROMPT
+        user_prompt = build_generate_reasoning_user_prompt(payload_context)
 
         parsed = self._chat_json(system_prompt, user_prompt, temperature=0.15)
         if parsed:
@@ -323,16 +326,11 @@ class GroqReasoningClient:
         if not self.enabled:
             return _heuristic_answer()
 
-        system_prompt = (
-            "You are a senior restructuring analyst answering follow-up questions about a forensic report. "
-            "Use both report context and web evidence if available. "
-            "Respond in strict JSON with keys: answer, rationale, caveat, confidence. "
-            "Keep answer concise and actionable."
-        )
-        user_prompt = (
-            f"Question: {question}\n"
-            f"Report context JSON:\n{json.dumps(report_context)}\n"
-            f"Web evidence JSON:\n{json.dumps(web_evidence or [])}"
+        system_prompt = ANSWER_REPORT_QUESTION_SYSTEM_PROMPT
+        user_prompt = build_answer_report_question_user_prompt(
+            question=question,
+            report_context=report_context,
+            web_evidence=web_evidence or [],
         )
 
         parsed = self._chat_json(system_prompt, user_prompt, temperature=0.2)

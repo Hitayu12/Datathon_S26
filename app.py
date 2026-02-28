@@ -33,6 +33,7 @@ from risk_model import (
     simulate_counterfactual,
 )
 from tavily_client import TavilyClient
+from watsonx_client import WatsonxReasoningClient
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -367,6 +368,44 @@ def _render_header() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def _render_llm_badge(provider_name: str, model_name: str) -> None:
+    safe_provider = html.escape(provider_name)
+    safe_model = html.escape(model_name)
+    st.markdown(
+        (
+            "<div style='margin:0.3rem 0 0.85rem;'>"
+            f"<span class='badge badge-ok'>LLM: {safe_provider} | {safe_model}</span>"
+            "</div>"
+        ),
+        unsafe_allow_html=True,
+    )
+
+
+def _test_llm_connection(reasoning_client: object, provider_name: str) -> Tuple[bool, str]:
+    system_prompt = 'Return JSON only with key "ok" and boolean value true.'
+    user_prompt = "Respond with the requested JSON."
+
+    if provider_name == "Groq":
+        response = reasoning_client._chat_json(
+            system_prompt,
+            user_prompt,
+            temperature=0.0,
+            max_completion_tokens=24,
+        )
+        if not response:
+            detail = getattr(reasoning_client, "last_error", "") or "No response returned."
+            raise RuntimeError(detail)
+        return True, f"Connected. Model: {response.get('model_used', 'unknown')}"
+
+    response = reasoning_client._chat_json(
+        system_prompt,
+        user_prompt,
+        temperature=0.0,
+        max_tokens=24,
+    )
+    return True, f"Connected. Model: {response.get('model_used', 'unknown')}"
 
 
 def _inject_assistant_panel_mode_style(compact: bool) -> None:
@@ -1465,9 +1504,69 @@ def main() -> None:
         st.session_state["assistant_compact"] = False
     if "analysis_cache" not in st.session_state:
         st.session_state["analysis_cache"] = None
+    if "llm_test_result" not in st.session_state:
+        st.session_state["llm_test_result"] = None
 
     tavily_key = os.getenv("TAVILY_API_KEY", "")
     groq_key = os.getenv("GROQ_API_KEY", "")
+    watsonx_api_key = os.getenv("WATSONX_API_KEY", "")
+    watsonx_project_id = os.getenv("WATSONX_PROJECT_ID", "")
+    watsonx_url = os.getenv("WATSONX_URL", "")
+    watsonx_model = os.getenv("WATSONX_MODEL", "")
+
+    with st.sidebar:
+        st.markdown("### Settings")
+        provider_choice = st.selectbox("LLM Provider", ["Groq", "IBM watsonx.ai"], index=0)
+
+    active_provider_name = provider_choice
+    if provider_choice == "IBM watsonx.ai":
+        missing_watsonx = [
+            name
+            for name, value in [
+                ("WATSONX_API_KEY", watsonx_api_key),
+                ("WATSONX_PROJECT_ID", watsonx_project_id),
+                ("WATSONX_URL", watsonx_url),
+                ("WATSONX_MODEL", watsonx_model),
+            ]
+            if not str(value).strip()
+        ]
+        if missing_watsonx:
+            st.warning(
+                "IBM watsonx.ai is missing required configuration: "
+                + ", ".join(missing_watsonx)
+                + ". Falling back to Groq."
+            )
+            reasoning_client = GroqReasoningClient(groq_key)
+            active_provider_name = "Groq"
+            active_model_name = reasoning_client.models[0] if reasoning_client.models else "unknown"
+        else:
+            reasoning_client = WatsonxReasoningClient(
+                api_key=watsonx_api_key,
+                project_id=watsonx_project_id,
+                base_url=watsonx_url,
+                model=watsonx_model,
+            )
+            active_model_name = watsonx_model
+    else:
+        reasoning_client = GroqReasoningClient(groq_key)
+        active_model_name = reasoning_client.models[0] if reasoning_client.models else "unknown"
+
+    with st.sidebar:
+        if st.button("Test LLM Connection", use_container_width=True):
+            try:
+                ok, message = _test_llm_connection(reasoning_client, active_provider_name)
+                st.session_state["llm_test_result"] = {"ok": ok, "message": message}
+            except Exception as exc:
+                st.session_state["llm_test_result"] = {"ok": False, "message": str(exc)}
+
+        llm_test_result = st.session_state.get("llm_test_result")
+        if isinstance(llm_test_result, dict):
+            if llm_test_result.get("ok"):
+                st.success(str(llm_test_result.get("message", "Connection OK")))
+            else:
+                st.error(str(llm_test_result.get("message", "Connection failed")))
+
+    _render_llm_badge(active_provider_name, active_model_name)
 
     with st.container(border=True):
         st.markdown("### Start Analysis")
@@ -1506,12 +1605,13 @@ def main() -> None:
         return
 
     tavily = TavilyClient(tavily_key)
-    groq = GroqReasoningClient(groq_key)
     local_model = _local_model()
     cache_key = {
         "company_input": company_input.strip().upper(),
         "max_auto_peers": max_auto_peers,
         "survivor_count": survivor_count,
+        "provider": active_provider_name,
+        "model": active_model_name,
     }
     cached = st.session_state.get("analysis_cache")
     use_cache = bool(cached) and cached.get("cache_key") == cache_key and not run_clicked
@@ -1550,7 +1650,7 @@ def main() -> None:
             info = fetch_company_info(profile.ticker)
             intelligence = _fetch_tavily_intelligence(tavily, profile.name, profile.ticker, profile.industry)
 
-            failure_status = groq.verify_failure_status(
+            failure_status = reasoning_client.verify_failure_status(
                 company_input=company_input,
                 resolved_name=profile.name,
                 ticker=profile.ticker,
@@ -1624,7 +1724,7 @@ def main() -> None:
         recommendations = generate_strategy_recommendations(failing_metrics, comparison["survivor_average_metrics"])
 
         progress.progress(74, text="Running Groq and local analyst reasoning...")
-        reasoning = groq.generate_reasoning(
+        reasoning = reasoning_client.generate_reasoning(
             company_name=profile.name,
             ticker=profile.ticker,
             industry=profile.industry,
@@ -2155,7 +2255,7 @@ def main() -> None:
                         for snippet, source in zip(web_search_2.snippets[:4], web_search_2.sources[:4]):
                             web_evidence.append({"snippet": snippet, "source": source})
 
-                        answer = groq.answer_report_question(
+                        answer = reasoning_client.answer_report_question(
                             question=pending_q,
                             report_context=qa_context,
                             web_evidence=web_evidence,
