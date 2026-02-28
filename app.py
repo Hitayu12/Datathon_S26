@@ -1038,11 +1038,11 @@ def _render_workflow_trace(
         <div class="flow-grid">
           <div class="flow-card"><b>1) Input Resolve</b><br/>Company name/ticker is mapped to canonical entity profile.</div>
           <div class="flow-card"><b>2) Evidence Gathering</b><br/>Macro + micro + industry + news + strategy + failure evidence fetched.</div>
-          <div class="flow-card"><b>3) Failure Gate</b><br/>Groq classifier + evidence guardrails decide failed/not-failed.</div>
+          <div class="flow-card"><b>3) Failure Gate</b><br/>LLM classifier + evidence guardrails decide failed/not-failed.</div>
           <div class="flow-card"><b>4) Peer Matching</b><br/>Industry-family/business-model matching ranks comparable survivors.</div>
           <div class="flow-card"><b>5) Risk Engines</b><br/>Layered analysis + multi-factor risk score + local analyst model.</div>
           <div class="flow-card"><b>6) Counterfactual Twin</b><br/>Replace weak metrics with survivor averages and recompute risk.</div>
-          <div class="flow-card"><b>7) Reasoning Synthesis</b><br/>Groq + deterministic rules write causes, deltas, actions.</div>
+          <div class="flow-card"><b>7) Reasoning Synthesis</b><br/>LLM + deterministic rules write causes, deltas, actions.</div>
           <div class="flow-card"><b>8) Evidence Report</b><br/>Simple + Analyst + Evidence tabs + export JSON/Markdown.</div>
           <div class="flow-card"><b>9) Ask Me Q&A</b><br/>Question-aware reasoning grounded in current report context.</div>
         </div>
@@ -1098,7 +1098,7 @@ def _render_workflow_trace(
         st.write("- Replace failing metrics with survivor averages to simulate prevention pathway.")
 
     with st.expander("6) Strategy Synthesis", expanded=False):
-        st.write("- Final recommendations combine deterministic metric gaps + Groq narrative synthesis.")
+        st.write("- Final recommendations combine deterministic metric gaps + LLM narrative synthesis.")
         for item in list(reasoning.get("prevention_measures", []) or [])[:3]:
             st.write(f"- {item}")
 
@@ -1721,7 +1721,7 @@ def main() -> None:
         simulation = simulate_counterfactual(failing_metrics, comparison["survivor_average_metrics"], macro_stress_score)
         recommendations = generate_strategy_recommendations(failing_metrics, comparison["survivor_average_metrics"])
 
-        progress.progress(74, text="Running Groq and local analyst reasoning...")
+        progress.progress(74, text="Running LLM and local analyst reasoning...")
         reasoning = reasoning_client.generate_reasoning(
             company_name=profile.name,
             ticker=profile.ticker,
@@ -2088,7 +2088,7 @@ def main() -> None:
         st.markdown("### Local Analyst Model (Trained In-App)")
         st.info(
             "What this tab does: it runs a local in-app analyst model that estimates distress probability from financial + macro signals. "
-            "It is used as a second opinion beside Groq so reasoning is more stable and auditable."
+            "It is used as a second opinion beside the selected LLM provider so reasoning is more stable and auditable."
         )
         st.write(
             "How to read it: higher probability means the company profile looks more distressed. "
@@ -2109,7 +2109,7 @@ def main() -> None:
             st.dataframe(features_df, use_container_width=True)
 
         if reasoning.get("technical_notes"):
-            st.markdown("Groq Technical Notes:")
+            st.markdown("LLM Technical Notes:")
             for note in reasoning.get("technical_notes", [])[:3]:
                 st.write(f"- {note}")
 
