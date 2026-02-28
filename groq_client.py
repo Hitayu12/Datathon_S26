@@ -8,12 +8,6 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-GAP_LABELS = {
-    "debt_to_equity_gap": "Debt to equity gap",
-    "current_ratio_gap": "Liquidity buffer gap (current ratio)",
-    "revenue_growth_gap": "Revenue growth gap",
-    "cash_burn_gap": "Cash burn gap",
-}
 from llm_prompts import (
     ANSWER_REPORT_QUESTION_SYSTEM_PROMPT,
     GENERATE_REASONING_SYSTEM_PROMPT,
