@@ -1,4 +1,4 @@
-# Mo-Hit_Datathon
+# Datathon_S26
 
 ## SignalForge: Failure Intelligence Studio
 
@@ -15,9 +15,11 @@ SignalForge is a Streamlit app that verifies whether a company actually failed, 
 - Digital twin simulation (risk before vs after)
 - Plain-English summary + technical deep-dive
 - Trained local analyst model (logistic classifier on distress scenarios)
-- Export buttons:
-  - JSON report
-  - Markdown report
+- Judge-ready features:
+  - Interactive Scenario Lab
+  - Ask Report Q&A
+  - Hover glossary/tooltips
+  - JSON + Markdown export
 
 ## Run
 
