@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import html
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -51,8 +52,12 @@ def _inject_styles() -> None:
             --line: #b8c6df;
         }
         .stApp {
-            background: radial-gradient(circle at 12% 8%, #cad9ef 0%, #d5e0ef 45%, #c5d3e7 100%);
+            background: radial-gradient(circle at 10% 2%, #d6e0ef 0%, #c8d4e7 38%, #bccbdd 100%);
             color: var(--ink);
+        }
+        .block-container {
+            padding-top: 1.05rem !important;
+            max-width: 1220px !important;
         }
         .stApp, .stApp p, .stApp span, .stApp li, .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
             color: var(--ink);
@@ -95,11 +100,11 @@ def _inject_styles() -> None:
             color: #0f172a !important;
         }
         .hero {
-            background: linear-gradient(125deg, #1d3557 0%, #264f7e 42%, #0ea5a6 100%);
+            background: linear-gradient(125deg, #11213f 0%, #1f3a63 46%, #0c8d98 100%);
             border-radius: 18px;
             color: #f8fbff;
             padding: 1.25rem 1.35rem;
-            box-shadow: 0 18px 38px rgba(20, 33, 61, 0.25);
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.22);
             margin-bottom: 1rem;
         }
         .hero h1 { margin: 0; font-size: 1.9rem; }
@@ -127,11 +132,11 @@ def _inject_styles() -> None:
         .explain { background:#eaf1fb; border:1px solid var(--line); border-left:5px solid var(--teal); border-radius:14px; padding:0.9rem; }
 
         div[data-testid="stMetric"] {
-            background:#eaf1fb;
-            border:1px solid var(--line);
+            background:#f3f7ff;
+            border:1px solid #c2d0e5;
             border-radius:12px;
             padding:0.5rem 0.7rem;
-            box-shadow:0 5px 14px rgba(20,33,61,0.06);
+            box-shadow:0 6px 16px rgba(20,33,61,0.08);
         }
         div[data-testid="stMetricLabel"] p {
             color:#6b7280 !important;
@@ -145,10 +150,10 @@ def _inject_styles() -> None:
             gap: 0.5rem;
         }
         .stTabs [data-baseweb="tab"] {
-            background: #eef4ff;
-            border: 1px solid #d7e4ff;
-            border-radius: 8px;
-            color: #1d3557;
+            background: #ecf3ff;
+            border: 1px solid #cddcf5;
+            border-radius: 10px;
+            color: #17355e;
             font-weight: 600;
             padding: 0.45rem 0.8rem;
         }
@@ -161,12 +166,12 @@ def _inject_styles() -> None:
         div[data-testid="stDownloadButton"] > button,
         button[kind="secondary"],
         button[kind="primary"] {
-            background: linear-gradient(120deg, #1d3557 0%, #0ea5a6 100%);
+            background: linear-gradient(120deg, #163660 0%, #0d8f99 100%);
             color: white;
-            border: 1px solid #0b5d66;
+            border: 1px solid #0d6f79;
             border-radius: 10px;
             font-weight: 700;
-            box-shadow: 0 4px 12px rgba(20, 33, 61, 0.25);
+            box-shadow: 0 6px 14px rgba(20, 33, 61, 0.23);
             opacity: 1 !important;
         }
         .stButton > button:hover,
@@ -200,6 +205,118 @@ def _inject_styles() -> None:
         .stVegaLiteChart .role-axis-label text,
         .stVegaLiteChart .role-legend text {
             fill: #0f172a !important;
+        }
+        .st-key-jarvis_trigger {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            width: 148px;
+            z-index: 10001;
+        }
+        .st-key-jarvis_trigger > div {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        .st-key-jarvis_trigger .stButton > button {
+            height: 48px;
+            border-radius: 999px !important;
+            padding: 0.45rem 0.82rem !important;
+            font-size: 0.84rem !important;
+            font-weight: 700 !important;
+            white-space: nowrap;
+            background: linear-gradient(120deg, #18c4ad 0%, #25b5ca 100%) !important;
+            border: 1px solid #75d7cd !important;
+            color: #032a2f !important;
+            box-shadow: 0 10px 20px rgba(10, 75, 95, 0.42) !important;
+        }
+        .st-key-jarvis_panel {
+            position: fixed;
+            right: 18px;
+            bottom: 84px;
+            width: min(360px, 92vw);
+            max-height: min(64vh, 540px);
+            z-index: 10000;
+            background: radial-gradient(circle at 8% 6%, #0b1f45 0%, #061833 44%, #020f26 100%);
+            border: 1px solid rgba(101, 163, 255, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 20px 52px rgba(2, 6, 23, 0.58);
+            padding: 0.9rem;
+            backdrop-filter: blur(8px);
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .st-key-jarvis_panel p,
+        .st-key-jarvis_panel label,
+        .st-key-jarvis_panel span,
+        .st-key-jarvis_panel h1,
+        .st-key-jarvis_panel h2,
+        .st-key-jarvis_panel h3 {
+            color: #dbeafe !important;
+        }
+        .st-key-jarvis_panel div[data-baseweb="input"],
+        .st-key-jarvis_panel div[data-baseweb="base-input"] {
+            background: rgba(10, 20, 38, 0.92) !important;
+            border: 1px solid #32496e !important;
+            border-radius: 999px !important;
+            min-height: 44px !important;
+        }
+        .st-key-jarvis_panel div[data-baseweb="input"] input,
+        .st-key-jarvis_panel div[data-baseweb="base-input"] input {
+            color: #e2e8f0 !important;
+            -webkit-text-fill-color: #e2e8f0 !important;
+            padding: 0.52rem 0.86rem !important;
+            font-size: 0.97rem !important;
+            line-height: 1.2 !important;
+        }
+        .st-key-jarvis_panel div[data-testid="InputInstructions"] {
+            display: none !important;
+        }
+        .st-key-jarvis_panel form {
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+        }
+        .st-key-jarvis_panel .stButton > button {
+            border-radius: 999px !important;
+            white-space: nowrap !important;
+            font-size: 0.95rem !important;
+            min-height: 44px !important;
+            padding: 0.4rem 0.9rem !important;
+            width: 100% !important;
+            line-height: 1.1 !important;
+        }
+        .st-key-jarvis_panel button[kind="secondary"] {
+            background: #0a1a34 !important;
+            border: 1px solid #3c5174 !important;
+            color: #e5e7eb !important;
+            box-shadow: none !important;
+        }
+        .st-key-jarvis_panel button[kind="primary"] {
+            background: linear-gradient(120deg, #20c9b1, #29b8d1) !important;
+            border: 1px solid #77e0d8 !important;
+            color: #062a33 !important;
+            box-shadow: none !important;
+        }
+        .jarvis-title { color:#f8fafc !important; font-size:1.45rem; font-weight:700; line-height:1; margin-bottom:.15rem; }
+        .jarvis-sub { color:#a6bddf !important; font-size:.8rem; margin-bottom:.2rem; }
+        @media (max-width: 640px) {
+            .st-key-jarvis_panel {
+                right: 10px;
+                bottom: 74px;
+                width: calc(100vw - 20px);
+                max-height: 60vh;
+                border-radius: 16px;
+            }
+            .st-key-jarvis_trigger {
+                right: 10px;
+                bottom: 10px;
+            }
+            .jarvis-title {
+                font-size: 1.3rem;
+            }
         }
         </style>
         """,
@@ -607,6 +724,21 @@ def _render_glossary_panel() -> None:
         unsafe_allow_html=True,
     )
 
+
+def _chat_bubble(text: str, role: str) -> str:
+    safe = html.escape(text or "")
+    if role == "assistant":
+        return (
+            "<div style='background:#1f2937;border:1px solid #334155;border-radius:14px;"
+            "padding:.62rem .72rem;color:#e2e8f0;font-size:.95rem;line-height:1.45;'>"
+            f"{safe}</div>"
+        )
+    return (
+        "<div style='background:#0b5d66;border:1px solid #14b8a6;border-radius:14px;padding:.55rem .65rem;"
+        "color:#ecfeff;font-size:.92rem;line-height:1.42;text-align:right;'>"
+        f"{safe}</div>"
+    )
+
 def _strengthen_reasoning(
     reasoning: Dict[str, object],
     *,
@@ -699,6 +831,62 @@ def _build_report_bundle(
     return json_text, markdown_text
 
 
+def _qa_context_from_report(
+    *,
+    profile_name: str,
+    ticker: str,
+    industry: str,
+    reasoning: Dict[str, object],
+    failing_risk_score: float,
+    macro_stress_score: float,
+    comparison: Dict[str, object],
+    simulation: Dict[str, object],
+    failing_metrics: Dict[str, Optional[float]],
+    survivor_tickers: List[str],
+    layers: Dict[str, Dict[str, object]],
+    local_before_prob: float,
+    local_after_prob: float,
+) -> Dict[str, Any]:
+    key_metrics = ["debt_to_equity", "current_ratio", "cash_burn", "revenue_growth", "revenue"]
+    fail_core = {k: failing_metrics.get(k) for k in key_metrics}
+    surv_avg = comparison.get("survivor_average_metrics", {}) or {}
+    surv_core = {k: surv_avg.get(k) for k in key_metrics}
+
+    return {
+        "company": {"name": profile_name, "ticker": ticker, "industry": industry},
+        "simple_view": {
+            "plain_english_explainer": reasoning.get("plain_english_explainer"),
+            "failure_drivers": reasoning.get("failure_drivers", []),
+            "survivor_differences": reasoning.get("survivor_differences", []),
+            "prevention_measures": reasoning.get("prevention_measures", []),
+            "risk_scores": {
+                "failing_risk": failing_risk_score,
+                "macro_stress": macro_stress_score,
+                "adjusted_risk": simulation.get("adjusted_score"),
+                "improvement_pct": simulation.get("improvement_percentage"),
+            },
+        },
+        "analyst_view": {
+            "survivor_cohort": survivor_tickers,
+            "failing_core_metrics": fail_core,
+            "survivor_core_metrics": surv_core,
+            "metric_gaps": comparison.get("metric_gaps", {}),
+            "component_scores": comparison.get("failing_components", {}),
+            "layer_signals": {
+                "macro": list(layers.get("macro", {}).get("signals", [])),
+                "business_model": list(layers.get("business_model", {}).get("signals", [])),
+                "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
+                "operational": list(layers.get("operational", {}).get("signals", [])),
+                "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
+            },
+            "local_model_probabilities": {
+                "before": local_before_prob,
+                "after": local_after_prob,
+            },
+        },
+    }
+
+
 @st.cache_resource
 def _local_model() -> LocalAnalystModel:
     model = LocalAnalystModel(random_state=42)
@@ -710,6 +898,24 @@ def main() -> None:
     st.set_page_config(page_title="SignalForge", page_icon="📉", layout="wide")
     _inject_styles()
     _render_header()
+
+    if "analysis_active" not in st.session_state:
+        st.session_state["analysis_active"] = False
+    if "assistant_open" not in st.session_state:
+        st.session_state["assistant_open"] = False
+    if "assistant_messages" not in st.session_state:
+        st.session_state["assistant_messages"] = [
+            {
+                "role": "assistant",
+                "text": "I will be your personal AI for this SignalForge Failure Intelligence report.",
+            }
+        ]
+    if "assistant_pending_question" not in st.session_state:
+        st.session_state["assistant_pending_question"] = None
+    if "assistant_waiting" not in st.session_state:
+        st.session_state["assistant_waiting"] = False
+    if "analysis_cache" not in st.session_state:
+        st.session_state["analysis_cache"] = None
 
     tavily_key = os.getenv("TAVILY_API_KEY", "")
     groq_key = os.getenv("GROQ_API_KEY", "")
@@ -727,36 +933,185 @@ def main() -> None:
                 survivor_count = st.slider("Survivor benchmark size", 2, 5, 3)
             st.caption("Keys are loaded from `.env` automatically.")
 
-        run = st.button("Run Failure Forensics", type="primary", use_container_width=True)
+        run_clicked = st.button("Run Failure Forensics", type="primary", use_container_width=True)
 
-    if not run:
+    if run_clicked:
+        st.session_state["analysis_active"] = True
+        st.session_state["analysis_cache"] = None
+        st.session_state["assistant_messages"] = [
+            {
+                "role": "assistant",
+                "text": "I will be your personal AI for this SignalForge Failure Intelligence report.",
+            }
+        ]
+        st.session_state["assistant_pending_question"] = None
+        st.session_state["assistant_waiting"] = False
+
+    if not st.session_state.get("analysis_active", False):
         return
 
     if not company_input.strip():
         st.error("Please enter a company name or ticker.")
+        st.session_state["analysis_active"] = False
         return
 
     tavily = TavilyClient(tavily_key)
     groq = GroqReasoningClient(groq_key)
     local_model = _local_model()
+    cache_key = {
+        "company_input": company_input.strip().upper(),
+        "max_auto_peers": max_auto_peers,
+        "survivor_count": survivor_count,
+    }
+    cached = st.session_state.get("analysis_cache")
+    use_cache = bool(cached) and cached.get("cache_key") == cache_key and not run_clicked
 
-    with st.spinner("Resolving company and verifying failure status..."):
-        resolved = resolve_company_input(company_input)
-        if resolved is None:
-            st.error("Could not resolve that company input.")
+    if use_cache:
+        bundle = cached["bundle"]
+        profile = bundle["profile"]
+        intelligence = bundle["intelligence"]
+        failure_status = bundle["failure_status"]
+        failed = bundle["failed"]
+        failing_metrics = bundle["failing_metrics"]
+        used_failed_imputation = bundle["used_failed_imputation"]
+        macro_stress_score = bundle["macro_stress_score"]
+        layers = bundle["layers"]
+        failing_risk_score = bundle["failing_risk_score"]
+        failing_components = bundle["failing_components"]
+        survivor_rows = bundle["survivor_rows"]
+        survivor_tickers = bundle["survivor_tickers"]
+        comparison = bundle["comparison"]
+        simulation = bundle["simulation"]
+        recommendations = bundle["recommendations"]
+        reasoning = bundle["reasoning"]
+        local_before = bundle["local_before"]
+        local_after = bundle["local_after"]
+    else:
+        with st.spinner("Resolving company and verifying failure status..."):
+            resolved = resolve_company_input(company_input)
+            if resolved is None:
+                st.error("Could not resolve that company input.")
+                st.session_state["analysis_active"] = False
+                return
+
+            profile = fetch_company_profile(resolved.ticker)
+            info = fetch_company_info(profile.ticker)
+            intelligence = _fetch_tavily_intelligence(tavily, profile.name, profile.ticker, profile.industry)
+
+            failure_status = groq.verify_failure_status(
+                company_input=company_input,
+                resolved_name=profile.name,
+                ticker=profile.ticker,
+                tavily_answer=str(intelligence["failure_check"]["answer"]),
+                tavily_snippets=list(intelligence["failure_check"]["snippets"]),
+            )
+
+        failed = bool(failure_status.get("is_failed", False))
+        if not failed:
+            st.markdown("### Verification")
+            v1, v2, v3 = st.columns([1.6, 1, 1])
+            v1.write(f"Resolved: **{profile.name} ({profile.ticker})**")
+            v2.metric("Failure Confidence", f"{float(failure_status.get('confidence', 0.0))*100:.1f}%")
+            v3.write(f"Model: `{failure_status.get('model_used', 'fallback')}`")
+            st.markdown('<span class="badge badge-ok">Likely Not Failed</span>', unsafe_allow_html=True)
+            st.warning("This case does not appear to be failed/distressed. Enter a failed company to generate a full forensic report.")
+            st.session_state["analysis_active"] = False
             return
 
-        profile = fetch_company_profile(resolved.ticker)
-        info = fetch_company_info(profile.ticker)
-        intelligence = _fetch_tavily_intelligence(tavily, profile.name, profile.ticker, profile.industry)
+        progress = st.progress(0, text="Collecting financial and peer data...")
+        failing_metrics = compute_metrics(fetch_financials(profile.ticker), company_info=info)
+        if _core_metric_quality(failing_metrics) < 2:
+            failing_metrics, used_failed_imputation = _impute_failed_defaults(failing_metrics)
+        else:
+            used_failed_imputation = False
 
-        failure_status = groq.verify_failure_status(
-            company_input=company_input,
-            resolved_name=profile.name,
+        qual = qualitative_summary("", intelligence["qual_snippets"])
+        qualitative_intensity = float(sum(qual["themes"].values()))
+        macro_stress_score = float(intelligence["macro_stress_score"])
+
+        layer_engine = LayeredAnalysisEngine(failing_metrics, qual["themes"], macro_stress_score)
+        layers = layer_engine.analyze_all_layers()
+        failing_risk_score, failing_components = MultiFactorRiskEngine(failing_metrics, macro_stress_score).compute_score()
+
+        progress.progress(40, text="Building survivor benchmark...")
+        peers = find_peer_companies(profile.ticker, max_peers=max_auto_peers)
+        peer_rows = _collect_peer_metrics([p["ticker"] for p in peers["peers"]], macro_stress_score)
+        if not peer_rows:
+            st.error("Unable to collect peer data.")
+            return
+
+        better = sorted([x for x in peer_rows if x["risk_score"] < failing_risk_score], key=lambda x: x["risk_score"])
+        survivor_rows = better[:survivor_count] if better else sorted(peer_rows, key=lambda x: x["risk_score"])[:survivor_count]
+
+        survivor_tickers = [x["ticker"] for x in survivor_rows]
+        survivor_metrics = [x["metrics"] for x in survivor_rows]
+
+        comparison = compare_failure_vs_survivors(failing_metrics, survivor_metrics, macro_stress_score)
+        simulation = simulate_counterfactual(failing_metrics, comparison["survivor_average_metrics"], macro_stress_score)
+        recommendations = generate_strategy_recommendations(failing_metrics, comparison["survivor_average_metrics"])
+
+        progress.progress(74, text="Running Groq and local analyst reasoning...")
+        reasoning = groq.generate_reasoning(
+            company_name=profile.name,
             ticker=profile.ticker,
-            tavily_answer=str(intelligence["failure_check"]["answer"]),
-            tavily_snippets=list(intelligence["failure_check"]["snippets"]),
+            industry=profile.industry,
+            failing_risk_score=failing_risk_score,
+            survivor_tickers=survivor_tickers,
+            layer_signals={
+                "macro": list(layers.get("macro", {}).get("signals", [])),
+                "business_model": list(layers.get("business_model", {}).get("signals", [])),
+                "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
+                "operational": list(layers.get("operational", {}).get("signals", [])),
+                "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
+            },
+            metric_gaps=comparison["metric_gaps"],
+            simulation=simulation,
+            recommendations=recommendations,
+            tavily_notes=intelligence["macro_notes"] + intelligence["strategy_notes"],
         )
+
+        local_before = local_model.predict(failing_metrics, macro_stress_score, qualitative_intensity)
+        local_after = local_model.predict(simulation["adjusted_metrics"], macro_stress_score, qualitative_intensity)
+        reasoning = _strengthen_reasoning(
+            reasoning,
+            deterministic_recommendations=recommendations,
+            layers=layers,
+        )
+
+        technical_notes = list(reasoning.get("technical_notes", []) or [])
+        technical_notes.insert(
+            0,
+            (
+                f"Local model distress probability changes from {local_before.risk_probability*100:.1f}% "
+                f"to {local_after.risk_probability*100:.1f}% under the counterfactual."
+            ),
+        )
+        reasoning["technical_notes"] = technical_notes[:4]
+        progress.progress(100, text="Report ready.")
+
+        st.session_state["analysis_cache"] = {
+            "cache_key": cache_key,
+            "bundle": {
+                "profile": profile,
+                "intelligence": intelligence,
+                "failure_status": failure_status,
+                "failed": failed,
+                "failing_metrics": failing_metrics,
+                "used_failed_imputation": used_failed_imputation,
+                "macro_stress_score": macro_stress_score,
+                "layers": layers,
+                "failing_risk_score": failing_risk_score,
+                "failing_components": failing_components,
+                "survivor_rows": survivor_rows,
+                "survivor_tickers": survivor_tickers,
+                "comparison": comparison,
+                "simulation": simulation,
+                "recommendations": recommendations,
+                "reasoning": reasoning,
+                "local_before": local_before,
+                "local_after": local_after,
+            },
+        }
 
     st.markdown("### Verification")
     v1, v2, v3 = st.columns([1.6, 1, 1])
@@ -776,80 +1131,8 @@ def main() -> None:
 
     if not failed:
         st.warning("This case does not appear to be failed/distressed. Enter a failed company to generate a full forensic report.")
+        st.session_state["analysis_active"] = False
         return
-
-    progress = st.progress(0, text="Collecting financial and peer data...")
-
-    failing_metrics = compute_metrics(fetch_financials(profile.ticker), company_info=info)
-    if _core_metric_quality(failing_metrics) < 2:
-        failing_metrics, used_failed_imputation = _impute_failed_defaults(failing_metrics)
-    else:
-        used_failed_imputation = False
-
-    qual = qualitative_summary("", intelligence["qual_snippets"])
-    qualitative_intensity = float(sum(qual["themes"].values()))
-    macro_stress_score = float(intelligence["macro_stress_score"])
-
-    layer_engine = LayeredAnalysisEngine(failing_metrics, qual["themes"], macro_stress_score)
-    layers = layer_engine.analyze_all_layers()
-    failing_risk_score, failing_components = MultiFactorRiskEngine(failing_metrics, macro_stress_score).compute_score()
-
-    progress.progress(40, text="Building survivor benchmark...")
-    peers = find_peer_companies(profile.ticker, max_peers=max_auto_peers)
-    peer_rows = _collect_peer_metrics([p["ticker"] for p in peers["peers"]], macro_stress_score)
-    if not peer_rows:
-        st.error("Unable to collect peer data.")
-        return
-
-    better = sorted([x for x in peer_rows if x["risk_score"] < failing_risk_score], key=lambda x: x["risk_score"])
-    survivor_rows = better[:survivor_count] if better else sorted(peer_rows, key=lambda x: x["risk_score"])[:survivor_count]
-
-    survivor_tickers = [x["ticker"] for x in survivor_rows]
-    survivor_metrics = [x["metrics"] for x in survivor_rows]
-
-    comparison = compare_failure_vs_survivors(failing_metrics, survivor_metrics, macro_stress_score)
-    simulation = simulate_counterfactual(failing_metrics, comparison["survivor_average_metrics"], macro_stress_score)
-    recommendations = generate_strategy_recommendations(failing_metrics, comparison["survivor_average_metrics"])
-
-    progress.progress(74, text="Running Groq and local analyst reasoning...")
-    reasoning = groq.generate_reasoning(
-        company_name=profile.name,
-        ticker=profile.ticker,
-        industry=profile.industry,
-        failing_risk_score=failing_risk_score,
-        survivor_tickers=survivor_tickers,
-        layer_signals={
-            "macro": list(layers.get("macro", {}).get("signals", [])),
-            "business_model": list(layers.get("business_model", {}).get("signals", [])),
-            "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
-            "operational": list(layers.get("operational", {}).get("signals", [])),
-            "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
-        },
-        metric_gaps=comparison["metric_gaps"],
-        simulation=simulation,
-        recommendations=recommendations,
-        tavily_notes=intelligence["macro_notes"] + intelligence["strategy_notes"],
-    )
-
-    local_before = local_model.predict(failing_metrics, macro_stress_score, qualitative_intensity)
-    local_after = local_model.predict(simulation["adjusted_metrics"], macro_stress_score, qualitative_intensity)
-    reasoning = _strengthen_reasoning(
-        reasoning,
-        deterministic_recommendations=recommendations,
-        layers=layers,
-    )
-
-    # Blend local model signal into technical notes for stronger, consistent reasoning output.
-    technical_notes = list(reasoning.get("technical_notes", []) or [])
-    technical_notes.insert(
-        0,
-        (
-            f"Local model distress probability changes from {local_before.risk_probability*100:.1f}% "
-            f"to {local_after.risk_probability*100:.1f}% under the counterfactual."
-        ),
-    )
-    reasoning["technical_notes"] = technical_notes[:4]
-    progress.progress(100, text="Report ready.")
 
     report_json, report_md = _build_report_bundle(
         profile.name,
@@ -883,7 +1166,7 @@ def main() -> None:
             use_container_width=True,
         )
 
-    tabs = st.tabs(["Simple View", "Analyst View", "Scenario Lab", "Model Lab", "Evidence", "Ask Report"])
+    tabs = st.tabs(["Simple View", "Analyst View", "Scenario Lab", "Model Lab", "Evidence"])
 
     with tabs[0]:
         st.markdown("### Plain-English Story")
@@ -1083,37 +1366,102 @@ def main() -> None:
             for url in intelligence["sources"]:
                 st.write(f"- {url}")
 
-    with tabs[5]:
-        st.markdown("### Ask This Report")
-        st.caption("Ask follow-up questions about the analysis. The answer uses the current report context.")
-        user_q = st.text_input(
-            "Your question",
-            value="What is the single highest-impact action to reduce distress fastest?",
-            help="Example: What assumption is most fragile? What should management do first in 90 days?",
-        )
-        ask = st.button("Answer My Question", use_container_width=True)
-        if ask and user_q.strip():
-            report_context: Dict[str, Any] = {
-                "company": {"name": profile.name, "ticker": profile.ticker},
-                "scores": {
-                    "failing_risk": failing_risk_score,
-                    "survivor_risk": comparison.get("survivor_score"),
-                    "adjusted_risk": simulation.get("adjusted_score"),
-                    "improvement": simulation.get("improvement_percentage"),
-                },
-                "recommendations": recommendations,
-                "failure_drivers": reasoning.get("failure_drivers", []),
-                "survivor_differences": reasoning.get("survivor_differences", []),
-                "technical_notes": reasoning.get("technical_notes", []),
-            }
-            answer = groq.answer_report_question(question=user_q, report_context=report_context)
-            st.markdown("**Answer**")
-            st.write(answer.get("answer", "No answer returned."))
-            st.markdown("**Rationale**")
-            st.write(answer.get("rationale", "No rationale returned."))
-            if answer.get("caveat"):
-                st.markdown("**Caveat**")
-                st.write(answer.get("caveat"))
+    qa_context = _qa_context_from_report(
+        profile_name=profile.name,
+        ticker=profile.ticker,
+        industry=profile.industry,
+        reasoning=reasoning,
+        failing_risk_score=failing_risk_score,
+        macro_stress_score=macro_stress_score,
+        comparison=comparison,
+        simulation=simulation,
+        failing_metrics=failing_metrics,
+        survivor_tickers=survivor_tickers,
+        layers=layers,
+        local_before_prob=local_before.risk_probability,
+        local_after_prob=local_after.risk_probability,
+    )
+
+    if not st.session_state.get("assistant_open", False):
+        with st.container(key="jarvis_trigger"):
+            if st.button("💬 Ask Me", key="jarvis_open_btn", use_container_width=True):
+                st.session_state["assistant_open"] = True
+                st.rerun()
+    else:
+        with st.container(key="jarvis_panel"):
+            hdr_left, hdr_right = st.columns([4.8, 1.2])
+            hdr_left.markdown("<div class='jarvis-title'>SignalForge AI</div>", unsafe_allow_html=True)
+            hdr_left.markdown("<div class='jarvis-sub'>Personal AI for this report</div>", unsafe_allow_html=True)
+            if hdr_right.button("✕", key="jarvis_close_btn", type="secondary", use_container_width=True):
+                st.session_state["assistant_open"] = False
+                st.rerun()
+
+            for msg in st.session_state.get("assistant_messages", [])[-8:]:
+                st.markdown(_chat_bubble(str(msg.get("text", "")), str(msg.get("role", "assistant"))), unsafe_allow_html=True)
+
+            with st.form("jarvis_form", clear_on_submit=False):
+                ask_q = st.text_input(
+                    "Ask about this report...",
+                    value=st.session_state.get("jarvis_q", ""),
+                    key="jarvis_q",
+                    label_visibility="collapsed",
+                    placeholder="Ask about this report...",
+                )
+                send_now = st.form_submit_button(
+                    "Ask Me",
+                    type="primary",
+                    use_container_width=True,
+                    disabled=bool(st.session_state.get("assistant_waiting", False)),
+                )
+
+            if send_now and ask_q.strip() and not st.session_state.get("assistant_waiting", False):
+                q = ask_q.strip()
+                st.session_state["assistant_messages"].append({"role": "user", "text": q})
+                st.session_state["assistant_messages"].append({"role": "assistant", "text": "Typing..."})
+                st.session_state["assistant_pending_question"] = q
+                st.session_state["assistant_waiting"] = True
+                st.session_state["jarvis_q"] = ""
+                st.rerun()
+
+            pending_q = st.session_state.get("assistant_pending_question")
+            if st.session_state.get("assistant_waiting", False) and pending_q:
+                with st.spinner("SignalForge AI is analyzing..."):
+                    try:
+                        web_search_1 = tavily.search(
+                            f"{profile.name} {profile.ticker} {pending_q}",
+                            max_results=4,
+                        )
+                        web_search_2 = tavily.search(
+                            f"{profile.industry} distressed company survivor strategies {pending_q}",
+                            max_results=4,
+                        )
+                        web_evidence = []
+                        for snippet, source in zip(web_search_1.snippets[:4], web_search_1.sources[:4]):
+                            web_evidence.append({"snippet": snippet, "source": source})
+                        for snippet, source in zip(web_search_2.snippets[:4], web_search_2.sources[:4]):
+                            web_evidence.append({"snippet": snippet, "source": source})
+
+                        answer = groq.answer_report_question(
+                            question=pending_q,
+                            report_context=qa_context,
+                            web_evidence=web_evidence,
+                        )
+                        answer_text = str(answer.get("answer", "")).strip() or "I recommend starting with immediate liquidity stabilization."
+                        rationale = str(answer.get("rationale", "")).strip()
+                        if rationale:
+                            answer_text = f"{answer_text}\n\nWhy: {rationale}"
+                    except Exception:
+                        answer_text = "I could not complete that request right now. Please try again."
+
+                msgs = st.session_state.get("assistant_messages", [])
+                if msgs and msgs[-1].get("role") == "assistant" and msgs[-1].get("text") == "Typing...":
+                    msgs[-1] = {"role": "assistant", "text": answer_text}
+                else:
+                    msgs.append({"role": "assistant", "text": answer_text})
+                st.session_state["assistant_messages"] = msgs
+                st.session_state["assistant_pending_question"] = None
+                st.session_state["assistant_waiting"] = False
+                st.rerun()
 
     st.caption(f"Reasoning model: {reasoning.get('model_used', 'fallback')} | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 

@@ -16,10 +16,10 @@ class GroqReasoningClient:
         self.api_key = (api_key or "").strip()
         self.timeout_seconds = timeout_seconds
         self.endpoint = "https://api.groq.com/openai/v1/chat/completions"
+        self.last_error = ""
         self.models = [
-            "deepseek-r1-distill-llama-70b",
             "llama-3.3-70b-versatile",
-            "mixtral-8x7b-32768",
+            "llama-3.1-8b-instant",
         ]
 
     @property
@@ -51,10 +51,17 @@ class GroqReasoningClient:
                 return None
         return None
 
-    def _chat_json(self, system_prompt: str, user_prompt: str, temperature: float = 0.1) -> Optional[Dict[str, Any]]:
+    def _chat_json(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 0.1,
+        max_completion_tokens: int = 180,
+    ) -> Optional[Dict[str, Any]]:
         if not self.enabled:
             return None
 
+        self.last_error = ""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -68,6 +75,8 @@ class GroqReasoningClient:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
+                "response_format": {"type": "json_object"},
+                "max_completion_tokens": max_completion_tokens,
             }
             try:
                 response = requests.post(
@@ -87,7 +96,8 @@ class GroqReasoningClient:
                 if parsed:
                     parsed["model_used"] = model
                     return parsed
-            except Exception:
+            except Exception as exc:
+                self.last_error = f"{model}: {type(exc).__name__}"
                 continue
 
         return None
@@ -101,19 +111,33 @@ class GroqReasoningClient:
         tavily_answer: str,
         tavily_snippets: List[str],
     ) -> Dict[str, Any]:
-        combined = "\n".join([tavily_answer, *tavily_snippets])
+        def _compact(text: str, max_len: int = 120) -> str:
+            t = " ".join((text or "").split())
+            return t[:max_len]
+
+        curated_snippets = [_compact(s, 120) for s in tavily_snippets if str(s).strip()][:2]
+        combined = "\n".join([_compact(tavily_answer, 160), *curated_snippets])
         combined_lower = combined.lower()
-        failed_keywords = [
-            "chapter 11",
-            "chapter 7",
-            "bankruptcy",
-            "bankrupt",
-            "liquidation",
-            "insolvency",
-            "restructuring filing",
-            "ceased operations",
+        failed_patterns = [
+            r"\bfiled for chapter 11\b",
+            r"\bfiled chapter 11\b",
+            r"\bfiled for bankruptcy\b",
+            r"\bbankrupt(?:cy)?\b",
+            r"\bentered liquidation\b",
+            r"\binsolven(?:cy|t)\b",
+            r"\bceased operations\b",
+            r"\bshut down\b",
         ]
-        failed_hit_count = sum(1 for word in failed_keywords if word in combined_lower)
+        negative_patterns = [
+            r"\bno bankruptcy\b",
+            r"\bno chapter 11\b",
+            r"\bdid not file\b",
+            r"\bnot bankrupt\b",
+            r"\bremains operational\b",
+            r"\bstill operating\b",
+        ]
+        failed_hit_count = sum(1 for pat in failed_patterns if re.search(pat, combined_lower))
+        negative_hit_count = sum(1 for pat in negative_patterns if re.search(pat, combined_lower))
 
         if not self.enabled:
             hit = failed_hit_count > 0
@@ -122,15 +146,14 @@ class GroqReasoningClient:
                 "status_label": "failed" if hit else "not_failed",
                 "confidence": 0.55,
                 "reason": "Heuristic classification used because Groq was unavailable.",
-                "evidence": [line for line in tavily_snippets[:3] if line],
+                "evidence": [line for line in curated_snippets[:3] if line],
                 "model_used": "fallback",
             }
 
         system_prompt = (
-            "You are a strict business-status classifier. "
-            "Return strict JSON with keys: "
-            "is_failed (boolean), status_label (one of failed, not_failed, unclear), "
-            "confidence (0 to 1), reason (string <= 35 words), evidence (array of up to 3 short bullet strings)."
+            "Classify company status. Return JSON only with keys: "
+            "is_failed (bool), status_label (failed|not_failed|unclear), "
+            "confidence (0-1), reason (<=20 words), evidence (<=3 short bullets)."
         )
         user_prompt = (
             "Determine if this company is a failed/distressed case (bankruptcy, liquidation, major collapse, or insolvency event). "
@@ -140,17 +163,17 @@ class GroqReasoningClient:
             f"Web evidence:\n{combined}"
         )
 
-        parsed = self._chat_json(system_prompt, user_prompt, temperature=0.0)
+        parsed = self._chat_json(system_prompt, user_prompt, temperature=0.0, max_completion_tokens=96)
         if parsed:
             parsed.setdefault("model_used", "unknown")
             parsed.setdefault("is_failed", False)
             parsed.setdefault("status_label", "unclear")
             parsed.setdefault("confidence", 0.5)
             parsed.setdefault("reason", "No reason returned.")
-            parsed.setdefault("evidence", tavily_snippets[:3])
+            parsed.setdefault("evidence", curated_snippets[:3])
 
             # Guardrail: when web snippets strongly indicate bankruptcy, avoid false negatives.
-            if failed_hit_count >= 2 and not bool(parsed.get("is_failed", False)):
+            if failed_hit_count >= 2 and negative_hit_count == 0 and not bool(parsed.get("is_failed", False)):
                 parsed["is_failed"] = True
                 parsed["status_label"] = "failed"
                 parsed["confidence"] = max(float(parsed.get("confidence", 0.0)), 0.75)
@@ -160,12 +183,15 @@ class GroqReasoningClient:
                 )
             return parsed
 
+        fallback_reason = "Could not verify failure status from model output."
+        if self.last_error:
+            fallback_reason = f"{fallback_reason} Last model error: {self.last_error}."
         return {
             "is_failed": False,
             "status_label": "unclear",
             "confidence": 0.5,
-            "reason": "Could not verify failure status from model output.",
-            "evidence": tavily_snippets[:3],
+            "reason": fallback_reason,
+            "evidence": curated_snippets[:3],
             "model_used": "fallback",
         }
 
@@ -248,35 +274,59 @@ class GroqReasoningClient:
         *,
         question: str,
         report_context: Dict[str, Any],
+        web_evidence: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, str]:
         """Answer user follow-up questions about the generated report."""
+        def _heuristic_answer() -> Dict[str, str]:
+            simple = report_context.get("simple_view", {}) if isinstance(report_context, dict) else {}
+            analyst = report_context.get("analyst_view", {}) if isinstance(report_context, dict) else {}
+            actions = list(simple.get("prevention_measures", []) or [])
+            drivers = list(simple.get("failure_drivers", []) or [])
+            risk = simple.get("risk_scores", {}) if isinstance(simple, dict) else {}
+            improvement = risk.get("improvement_pct")
+            q = question.lower().strip()
+
+            if ("first" in q or "single" in q or "highest" in q) and actions:
+                answer = actions[0]
+            elif ("why" in q or "driver" in q or "failed" in q) and drivers:
+                answer = drivers[0]
+            elif "improve" in q and actions:
+                answer = actions[0]
+            else:
+                answer = actions[0] if actions else "Prioritize liquidity and deleveraging in the first 90 days."
+
+            rationale = (
+                f"Baseline risk is {risk.get('failing_risk', 'N/A')} and simulated improvement is "
+                f"{improvement if improvement is not None else 'N/A'}%, so near-term capital structure and liquidity actions dominate."
+            )
+
+            caveat = (
+                "This fallback answer is heuristic; model/web-backed confidence improves when Groq responds successfully."
+            )
+            return {"answer": str(answer), "rationale": rationale, "caveat": caveat, "confidence": "0.62"}
+
         if not self.enabled:
-            return {
-                "answer": "Groq is unavailable, so interactive Q&A is running in fallback mode.",
-                "rationale": "The question could not be sent to the reasoning model.",
-                "caveat": "Enable GROQ_API_KEY for richer answers.",
-            }
+            return _heuristic_answer()
 
         system_prompt = (
             "You are a senior restructuring analyst answering follow-up questions about a forensic report. "
-            "Respond in strict JSON with keys: answer, rationale, caveat. "
+            "Use both report context and web evidence if available. "
+            "Respond in strict JSON with keys: answer, rationale, caveat, confidence. "
             "Keep answer concise and actionable."
         )
         user_prompt = (
             f"Question: {question}\n"
-            f"Report context JSON:\n{json.dumps(report_context)}"
+            f"Report context JSON:\n{json.dumps(report_context)}\n"
+            f"Web evidence JSON:\n{json.dumps(web_evidence or [])}"
         )
 
         parsed = self._chat_json(system_prompt, user_prompt, temperature=0.2)
         if not parsed:
-            return {
-                "answer": "I could not generate a model-backed answer right now.",
-                "rationale": "The reasoning model request failed.",
-                "caveat": "Try again in a moment.",
-            }
+            return _heuristic_answer()
 
         return {
             "answer": str(parsed.get("answer", "No answer returned.")),
             "rationale": str(parsed.get("rationale", "No rationale returned.")),
             "caveat": str(parsed.get("caveat", "")),
+            "confidence": str(parsed.get("confidence", "")),
         }
