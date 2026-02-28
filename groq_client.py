@@ -344,3 +344,79 @@ class GroqReasoningClient:
             "caveat": str(parsed.get("caveat", "")),
             "confidence": str(parsed.get("confidence", "")),
         }
+
+    def generate_council_draft(
+        self,
+        *,
+        company_profile: Dict[str, Any],
+        metrics: Dict[str, Any],
+        peer_summary: Dict[str, Any],
+        evidence_bundle: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        system_prompt = (
+            "You are Stage 1 of a Collaborative Reasoning Council for distressed-company analysis. "
+            "Return JSON only. Use only evidence snippet IDs provided in evidence_bundle.snippets. "
+            "No hallucinated citations. If support is missing, write 'Evidence unavailable' and lower confidence. "
+            "Schema keys: executive_summary (string), failure_drivers (array of objects with driver, evidence_ids, confidence), "
+            "survivor_strategies (array of objects with strategy, evidence_ids, confidence), "
+            "counterfactual_impact (object with before_score, after_score, improvement_pct), "
+            "disagreements (array), final_recommendations (array of objects with action, expected_effect, confidence), "
+            "overall_confidence (0-1)."
+        )
+        user_prompt = (
+            "Create the initial draft for the council. "
+            f"Context JSON:\n{json.dumps({'company_profile': company_profile, 'metrics': metrics, 'peer_summary': peer_summary, 'evidence_bundle': evidence_bundle})}"
+        )
+        parsed = self._chat_json(system_prompt, user_prompt, temperature=0.1, max_completion_tokens=520)
+        if not parsed:
+            raise RuntimeError(self.last_error or "Groq draft generation failed.")
+        return parsed
+
+    def generate_council_critique(
+        self,
+        *,
+        company_profile: Dict[str, Any],
+        metrics: Dict[str, Any],
+        peer_summary: Dict[str, Any],
+        evidence_bundle: Dict[str, Any],
+        groq_draft: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        system_prompt = (
+            "You are a rigorous reviewer in a Collaborative Reasoning Council. "
+            "Return JSON only with keys: supported_claims, unsupported_claims, missing_factors, rewrite_suggestions. "
+            "Use only evidence snippet IDs provided in evidence_bundle.snippets. No hallucinated citations."
+        )
+        user_prompt = (
+            "Critique the draft reasoning for evidentiary support, missing factors, and suggested rewrites. "
+            f"Context JSON:\n{json.dumps({'company_profile': company_profile, 'metrics': metrics, 'peer_summary': peer_summary, 'evidence_bundle': evidence_bundle, 'groq_draft': groq_draft})}"
+        )
+        parsed = self._chat_json(system_prompt, user_prompt, temperature=0.0, max_completion_tokens=360)
+        if not parsed:
+            raise RuntimeError(self.last_error or "Groq critique generation failed.")
+        return parsed
+
+    def synthesize_council_output(
+        self,
+        *,
+        company_profile: Dict[str, Any],
+        metrics: Dict[str, Any],
+        peer_summary: Dict[str, Any],
+        evidence_bundle: Dict[str, Any],
+        groq_draft: Dict[str, Any],
+        watsonx_critique: Dict[str, Any],
+        local_sanity_check: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        system_prompt = (
+            "You are the final synthesis step of a Collaborative Reasoning Council. "
+            "Return JSON only. Use only evidence snippet IDs from evidence_bundle.snippets. "
+            "No hallucinated citations. Remove or downgrade unsupported claims. Prioritize claims agreed by at least two sources. "
+            "Schema keys: executive_summary, failure_drivers, survivor_strategies, counterfactual_impact, disagreements, final_recommendations, overall_confidence."
+        )
+        user_prompt = (
+            "Merge the draft, critique, and local quantitative sanity check into one consensus output. "
+            f"Context JSON:\n{json.dumps({'company_profile': company_profile, 'metrics': metrics, 'peer_summary': peer_summary, 'evidence_bundle': evidence_bundle, 'groq_draft': groq_draft, 'watsonx_critique': watsonx_critique, 'local_sanity_check': local_sanity_check})}"
+        )
+        parsed = self._chat_json(system_prompt, user_prompt, temperature=0.1, max_completion_tokens=700)
+        if not parsed:
+            raise RuntimeError(self.last_error or "Groq council synthesis failed.")
+        return parsed

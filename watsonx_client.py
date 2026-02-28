@@ -312,3 +312,70 @@ class WatsonxReasoningClient:
             report_context=report_bundle,
             web_evidence=[],
         )
+
+    def generate_council_draft(
+        self,
+        *,
+        company_profile: Dict[str, Any],
+        metrics: Dict[str, Any],
+        peer_summary: Dict[str, Any],
+        evidence_bundle: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        system_prompt = (
+            "You are Stage 1 of a Collaborative Reasoning Council for distressed-company analysis. "
+            "Return JSON only. Use only evidence snippet IDs provided in evidence_bundle.snippets. "
+            "No hallucinated citations. If support is missing, write 'Evidence unavailable' and lower confidence. "
+            "Schema keys: executive_summary (string), failure_drivers (array of objects with driver, evidence_ids, confidence), "
+            "survivor_strategies (array of objects with strategy, evidence_ids, confidence), "
+            "counterfactual_impact (object with before_score, after_score, improvement_pct), disagreements (array), "
+            "final_recommendations (array of objects with action, expected_effect, confidence), overall_confidence (0-1)."
+        )
+        user_prompt = (
+            "Create the initial draft for the council. "
+            f"Context JSON:\n{json.dumps({'company_profile': company_profile, 'metrics': metrics, 'peer_summary': peer_summary, 'evidence_bundle': evidence_bundle})}"
+        )
+        return self._chat_json(system_prompt, user_prompt, temperature=0.1, max_tokens=650)
+
+    def generate_council_critique(
+        self,
+        *,
+        company_profile: Dict[str, Any],
+        metrics: Dict[str, Any],
+        peer_summary: Dict[str, Any],
+        evidence_bundle: Dict[str, Any],
+        groq_draft: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        system_prompt = (
+            "You are Stage 2 reviewer in a Collaborative Reasoning Council. "
+            "Return JSON only with keys: supported_claims, unsupported_claims, missing_factors, rewrite_suggestions. "
+            "Use only evidence snippet IDs provided in evidence_bundle.snippets. No hallucinated citations."
+        )
+        user_prompt = (
+            "Review the Groq draft against the same metrics and evidence. "
+            f"Context JSON:\n{json.dumps({'company_profile': company_profile, 'metrics': metrics, 'peer_summary': peer_summary, 'evidence_bundle': evidence_bundle, 'groq_draft': groq_draft})}"
+        )
+        return self._chat_json(system_prompt, user_prompt, temperature=0.0, max_tokens=420)
+
+    def synthesize_council_output(
+        self,
+        *,
+        company_profile: Dict[str, Any],
+        metrics: Dict[str, Any],
+        peer_summary: Dict[str, Any],
+        evidence_bundle: Dict[str, Any],
+        groq_draft: Dict[str, Any],
+        watsonx_critique: Dict[str, Any],
+        local_sanity_check: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        system_prompt = (
+            "You are Stage 4 final synthesis in a Collaborative Reasoning Council. "
+            "Return JSON only. Use only evidence snippet IDs from evidence_bundle.snippets. "
+            "No hallucinated citations. Remove or downgrade unsupported claims. Prioritize claims agreed by at least two sources. "
+            "If evidence is missing, explicitly say 'Evidence unavailable' and reduce confidence. "
+            "Schema keys: executive_summary, failure_drivers, survivor_strategies, counterfactual_impact, disagreements, final_recommendations, overall_confidence."
+        )
+        user_prompt = (
+            "Merge the draft, critique, and local quantitative sanity check into one consensus output. "
+            f"Context JSON:\n{json.dumps({'company_profile': company_profile, 'metrics': metrics, 'peer_summary': peer_summary, 'evidence_bundle': evidence_bundle, 'groq_draft': groq_draft, 'watsonx_critique': watsonx_critique, 'local_sanity_check': local_sanity_check})}"
+        )
+        return self._chat_json(system_prompt, user_prompt, temperature=0.1, max_tokens=900)

@@ -14,6 +14,7 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
+from collaborative_reasoning import run_reasoning_council
 from data_loader import (
     fetch_company_info,
     fetch_company_profile,
@@ -381,6 +382,198 @@ def _render_llm_badge(provider_name: str, model_name: str) -> None:
         ),
         unsafe_allow_html=True,
     )
+
+
+def _build_council_evidence_bundle(intelligence: Dict[str, object]) -> Dict[str, object]:
+    snippets: List[Dict[str, object]] = []
+    next_id = 1
+
+    def add_items(label: str, texts: List[object], sources: List[str]) -> None:
+        nonlocal next_id
+        source_list = list(sources or [])
+        for idx, text in enumerate(texts or []):
+            cleaned = str(text or "").strip()
+            if not cleaned:
+                continue
+            source = source_list[idx] if idx < len(source_list) else ""
+            snippets.append({"id": next_id, "label": label, "text": cleaned, "source": source})
+            next_id += 1
+
+    source_groups = dict(intelligence.get("source_groups", {}) or {})
+    failure_check = dict(intelligence.get("failure_check", {}) or {})
+    add_items("failure_check", [failure_check.get("answer", "")] + list(failure_check.get("snippets", []) or []), list(failure_check.get("sources", []) or []))
+    add_items("macro", list(intelligence.get("macro_notes", []) or []), list(source_groups.get("macro", []) or []))
+    add_items("micro", list(intelligence.get("micro_notes", []) or []), list(source_groups.get("micro", []) or []))
+    add_items("industry", list(intelligence.get("industry_notes", []) or []), list(source_groups.get("industry", []) or []))
+    add_items("news", list(intelligence.get("news_notes", []) or []), list(source_groups.get("news", []) or []))
+    add_items("strategy", list(intelligence.get("strategy_notes", []) or []), list(source_groups.get("strategy", []) or []))
+    add_items("qualitative", list(intelligence.get("qual_snippets", []) or []), list(source_groups.get("qualitative", []) or []))
+    return {"snippets": snippets}
+
+
+def _legacy_reasoning_from_council(council_output: Dict[str, Any]) -> Dict[str, Any]:
+    failure_drivers = [str((item or {}).get("driver", "Evidence unavailable")).strip() for item in list(council_output.get("failure_drivers", []) or [])]
+    survivor_strategies = [str((item or {}).get("strategy", "Evidence unavailable")).strip() for item in list(council_output.get("survivor_strategies", []) or [])]
+    final_recommendations = [str((item or {}).get("action", "Evidence unavailable")).strip() for item in list(council_output.get("final_recommendations", []) or [])]
+    technical_notes = [f"Overall council confidence: {float(council_output.get('overall_confidence', 0.0))*100:.1f}%"]
+    for row in list(council_output.get("disagreements", []) or [])[:3]:
+        topic = str((row or {}).get("topic", "")).strip()
+        if topic:
+            technical_notes.append(f"Disagreement: {topic}")
+    return {
+        "plain_english_explainer": str(council_output.get("executive_summary", "Evidence unavailable")),
+        "executive_summary": str(council_output.get("executive_summary", "Evidence unavailable")),
+        "failure_drivers": failure_drivers[:4] or ["Evidence unavailable"],
+        "survivor_differences": survivor_strategies[:4] or ["Evidence unavailable"],
+        "prevention_measures": final_recommendations[:4] or ["Evidence unavailable"],
+        "technical_notes": technical_notes[:5],
+        "model_used": "council",
+    }
+
+
+def _render_council_tab(council_output: Dict[str, Any]) -> None:
+    st.markdown("### Council Output")
+    st.markdown(
+        f"<div class='explain'>{html.escape(str(council_output.get('executive_summary', 'Evidence unavailable')))}</div>",
+        unsafe_allow_html=True,
+    )
+    impact = dict(council_output.get("counterfactual_impact", {}) or {})
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Overall Confidence", f"{float(council_output.get('overall_confidence', 0.0))*100:.1f}%")
+    c2.metric("Before Score", f"{float(impact.get('before_score', 0.0)):.2f}")
+    c3.metric("After Score", f"{float(impact.get('after_score', 0.0)):.2f}")
+
+    st.markdown("#### Failure Drivers")
+    for item in list(council_output.get("failure_drivers", []) or [])[:5]:
+        evidence_ids = ", ".join(f"[{eid}]" for eid in list((item or {}).get("evidence_ids", []) or [])) or "Evidence unavailable"
+        st.write(f"- {item.get('driver', 'Evidence unavailable')} | citations: {evidence_ids} | confidence {float(item.get('confidence', 0.0))*100:.0f}%")
+
+    st.markdown("#### Survivor Strategies")
+    for item in list(council_output.get("survivor_strategies", []) or [])[:5]:
+        evidence_ids = ", ".join(f"[{eid}]" for eid in list((item or {}).get("evidence_ids", []) or [])) or "Evidence unavailable"
+        st.write(f"- {item.get('strategy', 'Evidence unavailable')} | citations: {evidence_ids} | confidence {float(item.get('confidence', 0.0))*100:.0f}%")
+
+    disagreements = list(council_output.get("disagreements", []) or [])
+    if disagreements:
+        st.markdown("#### Disagreements")
+        for row in disagreements[:5]:
+            st.write(f"**{row.get('topic', 'Open issue')}**")
+            st.write(f"- Groq: {row.get('groq_view', '')}")
+            st.write(f"- watsonx: {row.get('watsonx_view', '')}")
+            st.write(f"- Local: {row.get('local_view', '')}")
+
+    st.markdown("#### Final Recommendations")
+    for item in list(council_output.get("final_recommendations", []) or [])[:5]:
+        st.write(f"- {item.get('action', 'Evidence unavailable')} -> {item.get('expected_effect', 'Evidence unavailable')} (confidence {float(item.get('confidence', 0.0))*100:.0f}%)")
+
+    breakdown = dict(council_output.get("model_breakdown", {}) or {})
+    st.markdown("#### Model Breakdown")
+    for key in ["groq", "watsonx", "local"]:
+        row = dict(breakdown.get(key, {}) or {})
+        with st.expander(f"{key.title()} Breakdown", expanded=False):
+            st.write(f"- Latency: {int(row.get('latency_ms', 0) or 0)} ms")
+            st.write(f"- Errors: {row.get('errors') or 'None'}")
+            st.json(row.get("raw", {}))
+
+
+def _render_council_trace_tab(council_output: Dict[str, Any]) -> None:
+    st.markdown("### Council Trace")
+    st.caption("How the Collaborative Reasoning Council reached the final answer.")
+    st.markdown(
+        """
+        <div class="flow-grid">
+          <div class="flow-card"><b>1) Groq Draft</b><br/>Produces the first structured reasoning draft from metrics, peers, and evidence.</div>
+          <div class="flow-card"><b>2) watsonx Critique</b><br/>Challenges unsupported claims, flags gaps, and proposes stronger phrasing.</div>
+          <div class="flow-card"><b>3) Local Sanity Check</b><br/>Checks if the narrative actually matches the quantitative risk profile.</div>
+          <div class="flow-card"><b>4) Final Synthesis</b><br/>Consensus answer keeps supported claims, downgrades weak ones, and records disagreements.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    breakdown = dict(council_output.get("model_breakdown", {}) or {})
+    rows = []
+    for key, label in [("groq", "Groq LLM"), ("watsonx", "IBM watsonx.ai"), ("local", "Local NLP/Analyst")]:
+        row = dict(breakdown.get(key, {}) or {})
+        rows.append(
+            {
+                "System": label,
+                "LatencyMs": int(row.get("latency_ms", 0) or 0),
+                "Status": "Error" if row.get("errors") else "OK",
+                "HasOutput": "Yes" if row.get("raw") else "No",
+            }
+        )
+
+    trace_df = pd.DataFrame(rows)
+    if not trace_df.empty:
+        st.altair_chart(
+            alt.Chart(trace_df)
+            .mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
+            .encode(
+                x=alt.X("System:N", title=None),
+                y=alt.Y("LatencyMs:Q", title="Latency (ms)"),
+                color=alt.Color("Status:N", scale=alt.Scale(range=["#10b981", "#e63946"])),
+                tooltip=["System", "LatencyMs", "Status", "HasOutput"],
+            )
+            .properties(height=240)
+            .configure_view(strokeOpacity=0)
+            .configure_axis(labelColor="#0f172a", titleColor="#0f172a", gridColor="#cbd5e1")
+            .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
+            .configure(background="#ffffff"),
+            use_container_width=True,
+        )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("Council Confidence", f"{float(council_output.get('overall_confidence', 0.0))*100:.1f}%")
+    with c2:
+        st.metric("Recorded Disagreements", f"{len(list(council_output.get('disagreements', []) or []))}")
+
+    groq_raw = dict((breakdown.get("groq", {}) or {}).get("raw", {}) or {})
+    watsonx_raw = dict((breakdown.get("watsonx", {}) or {}).get("raw", {}) or {})
+    local_raw = dict((breakdown.get("local", {}) or {}).get("raw", {}) or {})
+
+    exp1, exp2, exp3 = st.columns(3)
+    with exp1:
+        with st.expander("Groq Draft", expanded=True):
+            st.write("Groq creates the first structured story from the evidence and peer/counterfactual context.")
+            if breakdown.get("groq", {}).get("errors"):
+                st.error(str(breakdown.get("groq", {}).get("errors")))
+            st.json(groq_raw)
+    with exp2:
+        with st.expander("watsonx Critique", expanded=True):
+            st.write("watsonx acts as reviewer and challenges unsupported or weakly-supported claims.")
+            if breakdown.get("watsonx", {}).get("errors"):
+                st.error(str(breakdown.get("watsonx", {}).get("errors")))
+            st.json(watsonx_raw)
+    with exp3:
+        with st.expander("Local Sanity Check", expanded=True):
+            st.write("The local model checks whether the narrative is numerically consistent with the risk profile.")
+            if breakdown.get("local", {}).get("errors"):
+                st.error(str(breakdown.get("local", {}).get("errors")))
+            st.json(local_raw)
+
+    if local_raw:
+        flags = list(local_raw.get("narrative_alignment_flags", []) or [])
+        if flags:
+            st.markdown("#### Local Alignment Flags")
+            for flag in flags[:5]:
+                st.write(f"- {flag}")
+
+    disagreements = list(council_output.get("disagreements", []) or [])
+    if disagreements:
+        st.markdown("#### Where The Systems Disagreed")
+        diff_rows = []
+        for row in disagreements[:8]:
+            diff_rows.append(
+                {
+                    "Topic": row.get("topic", ""),
+                    "Groq": row.get("groq_view", ""),
+                    "watsonx": row.get("watsonx_view", ""),
+                    "Local": row.get("local_view", ""),
+                }
+            )
+        st.dataframe(pd.DataFrame(diff_rows), use_container_width=True)
 
 
 def _inject_assistant_panel_mode_style(compact: bool) -> None:
@@ -1514,45 +1707,61 @@ def main() -> None:
 
     with st.sidebar:
         st.markdown("### Settings")
+        reasoning_mode = st.selectbox("Reasoning Mode", ["Single Provider", "Collaborative Council (recommended)"], index=0)
         provider_choice = st.selectbox("LLM Provider", ["Groq", "IBM watsonx.ai"], index=0)
+
+    missing_watsonx = [
+        name
+        for name, value in [
+            ("WATSONX_API_KEY", watsonx_api_key),
+            ("WATSONX_PROJECT_ID", watsonx_project_id),
+            ("WATSONX_URL", watsonx_url),
+            ("WATSONX_MODEL", watsonx_model),
+        ]
+        if not str(value).strip()
+    ]
+    groq_client = GroqReasoningClient(groq_key)
+    watsonx_client = None if missing_watsonx else WatsonxReasoningClient(
+        api_key=watsonx_api_key,
+        project_id=watsonx_project_id,
+        base_url=watsonx_url,
+        model=watsonx_model,
+    )
 
     active_provider_name = provider_choice
     if provider_choice == "IBM watsonx.ai":
-        missing_watsonx = [
-            name
-            for name, value in [
-                ("WATSONX_API_KEY", watsonx_api_key),
-                ("WATSONX_PROJECT_ID", watsonx_project_id),
-                ("WATSONX_URL", watsonx_url),
-                ("WATSONX_MODEL", watsonx_model),
-            ]
-            if not str(value).strip()
-        ]
         if missing_watsonx:
             st.warning(
                 "IBM watsonx.ai is missing required configuration: "
                 + ", ".join(missing_watsonx)
                 + ". Falling back to Groq."
             )
-            reasoning_client = GroqReasoningClient(groq_key)
+            reasoning_client = groq_client
             active_provider_name = "Groq"
             active_model_name = reasoning_client.models[0] if reasoning_client.models else "unknown"
         else:
-            reasoning_client = WatsonxReasoningClient(
-                api_key=watsonx_api_key,
-                project_id=watsonx_project_id,
-                base_url=watsonx_url,
-                model=watsonx_model,
-            )
+            reasoning_client = watsonx_client
             active_model_name = watsonx_model
     else:
-        reasoning_client = GroqReasoningClient(groq_key)
+        reasoning_client = groq_client
         active_model_name = reasoning_client.models[0] if reasoning_client.models else "unknown"
+
+    if reasoning_mode == "Collaborative Council (recommended)":
+        if watsonx_client is None:
+            st.warning("Council mode will run with Groq + Local only because watsonx.ai is not fully configured.")
+        active_provider_name = "Collaborative Council"
+        active_model_name = (
+            f"Groq + watsonx + Local (synth: {watsonx_model})"
+            if watsonx_client is not None
+            else f"Groq + Local (synth: {groq_client.models[0] if groq_client.models else 'unknown'})"
+        )
 
     with st.sidebar:
         if st.button("Test LLM Connection", use_container_width=True):
             try:
-                ok, message = _test_llm_connection(reasoning_client, active_provider_name)
+                test_client = reasoning_client if active_provider_name != "Collaborative Council" else (watsonx_client or groq_client)
+                test_provider = "IBM watsonx.ai" if test_client is watsonx_client and watsonx_client is not None else "Groq"
+                ok, message = _test_llm_connection(test_client, test_provider)
                 st.session_state["llm_test_result"] = {"ok": ok, "message": message}
             except Exception as exc:
                 st.session_state["llm_test_result"] = {"ok": False, "message": str(exc)}
@@ -1608,6 +1817,7 @@ def main() -> None:
         "company_input": company_input.strip().upper(),
         "max_auto_peers": max_auto_peers,
         "survivor_count": survivor_count,
+        "mode": reasoning_mode,
         "provider": active_provider_name,
         "model": active_model_name,
     }
@@ -1633,6 +1843,7 @@ def main() -> None:
         simulation = bundle["simulation"]
         recommendations = bundle["recommendations"]
         reasoning = bundle["reasoning"]
+        council_output = bundle.get("council_output")
         qual = bundle.get("qual") or qualitative_summary("", intelligence.get("qual_snippets", []))
         local_before = bundle["local_before"]
         local_after = bundle["local_after"]
@@ -1721,34 +1932,73 @@ def main() -> None:
         simulation = simulate_counterfactual(failing_metrics, comparison["survivor_average_metrics"], macro_stress_score)
         recommendations = generate_strategy_recommendations(failing_metrics, comparison["survivor_average_metrics"])
 
-        progress.progress(74, text="Running LLM and local analyst reasoning...")
-        reasoning = reasoning_client.generate_reasoning(
-            company_name=profile.name,
-            ticker=profile.ticker,
-            industry=profile.industry,
-            failing_risk_score=failing_risk_score,
-            survivor_tickers=survivor_tickers,
-            layer_signals={
-                "macro": list(layers.get("macro", {}).get("signals", [])),
-                "business_model": list(layers.get("business_model", {}).get("signals", [])),
-                "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
-                "operational": list(layers.get("operational", {}).get("signals", [])),
-                "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
-            },
-            metric_gaps=comparison["metric_gaps"],
-            simulation=simulation,
-            recommendations=recommendations,
-            tavily_notes=(
-                intelligence["macro_notes"]
-                + intelligence["micro_notes"]
-                + intelligence["industry_notes"]
-                + intelligence["news_notes"]
-                + intelligence["strategy_notes"]
-            ),
-        )
-
         local_before = local_model.predict(failing_metrics, macro_stress_score, qualitative_intensity)
         local_after = local_model.predict(simulation["adjusted_metrics"], macro_stress_score, qualitative_intensity)
+
+        progress.progress(74, text="Running LLM and local analyst reasoning...")
+        council_output = None
+        if reasoning_mode == "Collaborative Council (recommended)":
+            evidence_bundle = _build_council_evidence_bundle(intelligence)
+            council_output = run_reasoning_council(
+                {
+                    "company_profile": {
+                        "name": profile.name,
+                        "ticker": profile.ticker,
+                        "industry": profile.industry,
+                        "sector": profile.sector,
+                    },
+                    "metrics": failing_metrics,
+                    "peer_summary": {
+                        **comparison,
+                        "survivor_tickers": survivor_tickers,
+                        "layer_signals": {
+                            "macro": list(layers.get("macro", {}).get("signals", [])),
+                            "business_model": list(layers.get("business_model", {}).get("signals", [])),
+                            "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
+                            "operational": list(layers.get("operational", {}).get("signals", [])),
+                            "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
+                        },
+                    },
+                    "evidence_bundle": evidence_bundle,
+                    "simulation": simulation,
+                    "recommendations": recommendations,
+                    "failing_risk_score": failing_risk_score,
+                    "macro_stress_score": macro_stress_score,
+                    "qualitative_intensity": qualitative_intensity,
+                    "failure_year": None,
+                    "groq_client": groq_client,
+                    "watsonx_client": watsonx_client,
+                    "local_model": local_model,
+                    "synthesis_provider": "watsonx" if watsonx_client is not None else "groq",
+                }
+            )
+            reasoning = _legacy_reasoning_from_council(council_output)
+        else:
+            reasoning = reasoning_client.generate_reasoning(
+                company_name=profile.name,
+                ticker=profile.ticker,
+                industry=profile.industry,
+                failing_risk_score=failing_risk_score,
+                survivor_tickers=survivor_tickers,
+                layer_signals={
+                    "macro": list(layers.get("macro", {}).get("signals", [])),
+                    "business_model": list(layers.get("business_model", {}).get("signals", [])),
+                    "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
+                    "operational": list(layers.get("operational", {}).get("signals", [])),
+                    "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
+                },
+                metric_gaps=comparison["metric_gaps"],
+                simulation=simulation,
+                recommendations=recommendations,
+                tavily_notes=(
+                    intelligence["macro_notes"]
+                    + intelligence["micro_notes"]
+                    + intelligence["industry_notes"]
+                    + intelligence["news_notes"]
+                    + intelligence["strategy_notes"]
+                ),
+            )
+
         reasoning = _strengthen_reasoning(
             reasoning,
             deterministic_recommendations=recommendations,
@@ -1786,6 +2036,7 @@ def main() -> None:
                 "simulation": simulation,
                 "recommendations": recommendations,
                 "reasoning": reasoning,
+                "council_output": council_output,
                 "qual": qual,
                 "local_before": local_before,
                 "local_after": local_after,
@@ -1869,7 +2120,7 @@ def main() -> None:
             use_container_width=True,
         )
 
-    tabs = st.tabs(["Simple View", "Analyst View", "Scenario Lab", "Model Lab", "Evidence"])
+    tabs = st.tabs(["Simple View", "Analyst View", "Council Output", "Council Trace", "Scenario Lab", "Model Lab", "Evidence"])
 
     with tabs[0]:
         st.markdown("### Plain-English Story")
@@ -2028,6 +2279,18 @@ def main() -> None:
             st.info("Some failed-company metrics were estimated due limited filing availability for this symbol.")
 
     with tabs[2]:
+        if reasoning_mode == "Collaborative Council (recommended)" and council_output:
+            _render_council_tab(council_output)
+        else:
+            st.info("Council mode is off. Switch Reasoning Mode to `Collaborative Council (recommended)` to view collaborative output.")
+
+    with tabs[3]:
+        if reasoning_mode == "Collaborative Council (recommended)" and council_output:
+            _render_council_trace_tab(council_output)
+        else:
+            st.info("Council mode is off. Switch Reasoning Mode to `Collaborative Council (recommended)` to inspect the multi-system trace.")
+
+    with tabs[4]:
         st.markdown("### Interactive Scenario Lab")
         st.caption("Adjust strategic levers and instantly see simulated risk impact. Hover each control for meaning.")
 
@@ -2084,7 +2347,7 @@ def main() -> None:
         c_metric3.metric("Scenario Improvement", f"{custom_improvement:.2f}%")
         st.altair_chart(_chart_before_after(failing_risk_score, custom_score), use_container_width=True)
 
-    with tabs[3]:
+    with tabs[5]:
         st.markdown("### Local Analyst Model (Trained In-App)")
         st.info(
             "What this tab does: it runs a local in-app analyst model that estimates distress probability from financial + macro signals. "
@@ -2113,7 +2376,7 @@ def main() -> None:
             for note in reasoning.get("technical_notes", [])[:3]:
                 st.write(f"- {note}")
 
-    with tabs[4]:
+    with tabs[6]:
         _render_workflow_trace(
             profile_name=profile.name,
             ticker=profile.ticker,
@@ -2275,7 +2538,18 @@ def main() -> None:
                 st.session_state["assistant_waiting"] = False
                 st.rerun()
 
-    st.caption(f"Reasoning model: {reasoning.get('model_used', 'fallback')} | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    if reasoning_mode == "Collaborative Council (recommended)":
+        caption_model = active_model_name
+        st.caption(
+            f"Reasoning mode: {reasoning_mode} | Systems: {caption_model} | "
+            f"Workflow: Groq draft -> watsonx critique/synthesis -> Local NLP/Analyst sanity check | "
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+    else:
+        st.caption(
+            f"Reasoning mode: {reasoning_mode} | Model: {reasoning.get('model_used', 'fallback')} | "
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
 
 
 if __name__ == "__main__":
