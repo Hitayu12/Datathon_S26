@@ -8,6 +8,13 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+GAP_LABELS = {
+    "debt_to_equity_gap": "Debt to equity gap",
+    "current_ratio_gap": "Liquidity buffer gap (current ratio)",
+    "revenue_growth_gap": "Revenue growth gap",
+    "cash_burn_gap": "Cash burn gap",
+}
+
 
 class GroqReasoningClient:
     """Calls Groq chat completions and requests structured JSON output."""
@@ -200,7 +207,12 @@ class GroqReasoningClient:
         for key, value in metric_gaps.items():
             if value is None:
                 continue
-            top_gap_lines.append(f"{key}: {value}")
+            label = GAP_LABELS.get(str(key), str(key).replace("_", " "))
+            try:
+                num = float(value)
+                top_gap_lines.append(f"{label}: {num:.2f}")
+            except (TypeError, ValueError):
+                top_gap_lines.append(f"{label}: {value}")
 
         return {
             "plain_english_explainer": "The company likely failed because cash pressure and debt stress built up faster than it could recover sales.",
@@ -236,7 +248,10 @@ class GroqReasoningClient:
             "failing_risk_score": failing_risk_score,
             "survivor_tickers": survivor_tickers,
             "layer_signals": layer_signals,
-            "metric_gaps": metric_gaps,
+            "metric_gaps": {
+                GAP_LABELS.get(str(k), str(k).replace("_", " ")): v
+                for k, v in metric_gaps.items()
+            },
             "simulation": simulation,
             "recommendations": recommendations,
             "tavily_notes": tavily_notes[:5],

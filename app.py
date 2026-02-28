@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import html
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -235,8 +236,8 @@ def _inject_styles() -> None:
             position: fixed;
             right: 18px;
             bottom: 84px;
-            width: min(360px, 92vw);
-            max-height: min(64vh, 540px);
+            width: min(470px, 95vw);
+            max-height: min(74vh, 720px);
             z-index: 10000;
             background: radial-gradient(circle at 8% 6%, #0b1f45 0%, #061833 44%, #020f26 100%);
             border: 1px solid rgba(101, 163, 255, 0.3);
@@ -302,6 +303,33 @@ def _inject_styles() -> None:
         }
         .jarvis-title { color:#f8fafc !important; font-size:1.45rem; font-weight:700; line-height:1; margin-bottom:.15rem; }
         .jarvis-sub { color:#a6bddf !important; font-size:.8rem; margin-bottom:.2rem; }
+        .flow-grid {
+            display:grid;
+            grid-template-columns: repeat(3, minmax(180px, 1fr));
+            gap: 0.55rem;
+            margin-top: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+        .flow-card {
+            background: #eef5ff;
+            border: 1px solid #c6d8f2;
+            border-radius: 12px;
+            padding: 0.56rem 0.62rem;
+            color: #0f172a;
+            box-shadow: 0 4px 11px rgba(16, 33, 61, 0.08);
+            font-size: 0.88rem;
+            line-height: 1.3;
+        }
+        .flow-card b {
+            color: #12345b;
+        }
+        .flow-arrow {
+            text-align: center;
+            color: #1d3557;
+            font-weight: 700;
+            font-size: 1rem;
+            margin: 0.1rem 0 0.2rem;
+        }
         @media (max-width: 640px) {
             .st-key-jarvis_panel {
                 right: 10px;
@@ -336,6 +364,37 @@ def _render_header() -> None:
             <div class="step-item"><b>3) Simulate Prevention</b><br/>Recomputes risk if survivor moves were applied.</div>
           </div>
         </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _inject_assistant_panel_mode_style(compact: bool) -> None:
+    if compact:
+        st.markdown(
+            """
+            <style>
+            .st-key-jarvis_panel {
+                width: min(340px, 90vw) !important;
+                max-height: min(56vh, 460px) !important;
+            }
+            .st-key-jarvis_panel .jarvis-title {
+                font-size: 1.25rem !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
+
+    st.markdown(
+        """
+        <style>
+        .st-key-jarvis_panel {
+            width: min(470px, 95vw) !important;
+            max-height: min(74vh, 720px) !important;
+        }
+        </style>
         """,
         unsafe_allow_html=True,
     )
@@ -632,6 +691,98 @@ def _chart_metric_gaps(metric_gaps: Dict[str, object]) -> alt.Chart:
     )
 
 
+def _chart_layer_stress_heatmap(
+    layers: Dict[str, Dict[str, object]],
+    intelligence: Dict[str, object],
+    qual: Dict[str, object],
+) -> alt.Chart:
+    layer_titles = {
+        "macro": "Macro",
+        "business_model": "Business",
+        "financial_health": "Financial",
+        "operational": "Operational",
+        "qualitative": "Qualitative",
+    }
+
+    rows = []
+    for key, title in layer_titles.items():
+        signal_count = len(list(layers.get(key, {}).get("signals", []) or []))
+        score = float(signal_count)
+        if key == "macro":
+            score += float(intelligence.get("macro_stress_score", 0.0)) / 38.0
+        if key == "qualitative":
+            score += float(qual.get("distress_intensity", 0.0)) / 2.8
+        rows.append({"Layer": title, "Stress Score": round(score, 3), "Signals": signal_count})
+
+    df = pd.DataFrame(rows)
+    return (
+        alt.Chart(df)
+        .mark_rect(cornerRadius=8)
+        .encode(
+            x=alt.X("Layer:N", title=None, sort=["Macro", "Business", "Financial", "Operational", "Qualitative"]),
+            color=alt.Color(
+                "Stress Score:Q",
+                scale=alt.Scale(range=["#d7eef6", "#8fc6d6", "#377ea3", "#e63946"]),
+                title="Stress Intensity",
+            ),
+            tooltip=["Layer", alt.Tooltip("Stress Score:Q", format=".2f"), "Signals"],
+        )
+        .properties(height=90)
+        .configure_view(strokeOpacity=0)
+        .configure_axis(labelColor="#0f172a", titleColor="#0f172a", labelFontSize=12, titleFontSize=12)
+        .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
+        .configure(background="#ffffff")
+    )
+
+
+def _chart_risk_contribution(failing_components: Dict[str, float]) -> alt.Chart:
+    weights = {
+        "debt_risk": 24.0,
+        "liquidity_risk": 22.0,
+        "revenue_risk": 20.0,
+        "burn_risk": 20.0,
+        "macro_risk": 14.0,
+    }
+    labels = {
+        "debt_risk": "Debt",
+        "liquidity_risk": "Liquidity",
+        "revenue_risk": "Revenue",
+        "burn_risk": "Cash Burn",
+        "macro_risk": "Macro",
+    }
+
+    rows = []
+    for key in ["debt_risk", "liquidity_risk", "revenue_risk", "burn_risk", "macro_risk"]:
+        val = float(failing_components.get(key, 0.0))
+        weighted_points = val * float(weights[key])
+        rows.append(
+            {
+                "Driver": labels[key],
+                "Risk Points": round(weighted_points, 3),
+                "Raw Component": round(val, 3),
+            }
+        )
+    df = pd.DataFrame(rows)
+    return (
+        alt.Chart(df)
+        .mark_bar(cornerRadiusTopLeft=7, cornerRadiusTopRight=7)
+        .encode(
+            x=alt.X("Driver:N", title=None, sort=None),
+            y=alt.Y("Risk Points:Q", title="Contribution to Total Risk (points out of 100)"),
+            color=alt.Color(
+                "Driver:N",
+                scale=alt.Scale(range=["#1d3557", "#0ea5a6", "#457b9d", "#fb8500", "#e63946"]),
+                legend=None,
+            ),
+            tooltip=["Driver", alt.Tooltip("Risk Points:Q", format=".2f"), alt.Tooltip("Raw Component:Q", format=".3f")],
+        )
+        .properties(height=240)
+        .configure_view(strokeOpacity=0)
+        .configure_axis(labelColor="#0f172a", titleColor="#0f172a", labelFontSize=12, titleFontSize=12, gridColor="#cbd5e1")
+        .configure(background="#ffffff")
+    )
+
+
 def _chart_nlp_theme_scores(qual: Dict[str, object]) -> alt.Chart:
     theme_scores = dict(qual.get("theme_scores", {}) or {})
     theme_counts = dict(qual.get("themes", {}) or {})
@@ -845,6 +996,29 @@ def _render_workflow_trace(
 ) -> None:
     st.markdown("### SignalForge Workflow")
     st.caption("End-to-end execution trace from input to final recommendations.")
+    st.markdown(
+        """
+        <div class="flow-grid">
+          <div class="flow-card"><b>1) Input Resolve</b><br/>Company name/ticker is mapped to canonical entity profile.</div>
+          <div class="flow-card"><b>2) Evidence Gathering</b><br/>Macro + micro + industry + news + strategy + failure evidence fetched.</div>
+          <div class="flow-card"><b>3) Failure Gate</b><br/>Groq classifier + evidence guardrails decide failed/not-failed.</div>
+          <div class="flow-card"><b>4) Peer Matching</b><br/>Industry-family/business-model matching ranks comparable survivors.</div>
+          <div class="flow-card"><b>5) Risk Engines</b><br/>Layered analysis + multi-factor risk score + local analyst model.</div>
+          <div class="flow-card"><b>6) Counterfactual Twin</b><br/>Replace weak metrics with survivor averages and recompute risk.</div>
+          <div class="flow-card"><b>7) Reasoning Synthesis</b><br/>Groq + deterministic rules write causes, deltas, actions.</div>
+          <div class="flow-card"><b>8) Evidence Report</b><br/>Simple + Analyst + Evidence tabs + export JSON/Markdown.</div>
+          <div class="flow-card"><b>9) Ask Me Q&A</b><br/>Question-aware reasoning grounded in current report context.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "```text\n"
+        "Input -> Resolve -> Tavily Evidence -> Failure Verification -> Peer/Survivor Match\n"
+        "      -> Layered Stress + Risk Score -> Counterfactual Twin -> Strategy Synthesis\n"
+        "      -> Analyst Report + Exports -> Ask Me (context + web evidence)\n"
+        "```"
+    )
 
     with st.expander("1) Input + Entity Resolution", expanded=False):
         st.write(f"- Input resolved to: **{profile_name} ({ticker})**")
@@ -892,6 +1066,30 @@ def _render_workflow_trace(
             st.write(f"- {item}")
 
 
+def _humanize_gap_terms(text: str) -> str:
+    out = str(text or "")
+    replacements = {
+        "debt_to_equity_gap": "debt-to-equity gap",
+        "current_ratio_gap": "liquidity buffer gap (current ratio)",
+        "revenue_growth_gap": "revenue growth gap",
+        "cash_burn_gap": "cash burn gap",
+    }
+    for old, new in replacements.items():
+        out = out.replace(old, new)
+    return out
+
+
+def _clean_reasoning_line(text: str, max_len: int = 180) -> str:
+    cleaned = str(text or "")
+    cleaned = _humanize_gap_terms(cleaned)
+    cleaned = cleaned.replace("\n", " ").replace("\r", " ")
+    cleaned = re.sub(r"#+\s*", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -*")
+    if len(cleaned) > max_len:
+        cleaned = cleaned[: max_len - 1].rstrip() + "…"
+    return cleaned
+
+
 def _chat_bubble(text: str, role: str) -> str:
     safe = html.escape(text or "")
     if role == "assistant":
@@ -914,7 +1112,7 @@ def _strengthen_reasoning(
 ) -> Dict[str, object]:
     out = dict(reasoning)
 
-    failure_drivers = list(out.get("failure_drivers", []) or [])
+    failure_drivers = [_clean_reasoning_line(x) for x in list(out.get("failure_drivers", []) or []) if str(x).strip()]
     if len(failure_drivers) < 3:
         layer_backfill: List[str] = []
         for key in ["financial_health", "operational", "business_model", "qualitative", "macro"]:
@@ -926,24 +1124,32 @@ def _strengthen_reasoning(
                 break
     out["failure_drivers"] = failure_drivers[:3]
 
-    measures = list(out.get("prevention_measures", []) or [])
+    measures = [_clean_reasoning_line(x) for x in list(out.get("prevention_measures", []) or []) if str(x).strip()]
     for rec in deterministic_recommendations:
-        if rec not in measures:
-            measures.append(rec)
+        clean_rec = _clean_reasoning_line(rec)
+        if clean_rec not in measures:
+            measures.append(clean_rec)
         if len(measures) >= 4:
             break
     out["prevention_measures"] = measures[:4]
+
+    survivor_diffs = [_clean_reasoning_line(x) for x in list(out.get("survivor_differences", []) or []) if str(x).strip()]
+    out["survivor_differences"] = survivor_diffs[:4]
+    technical_notes = [_clean_reasoning_line(x, max_len=220) for x in list(out.get("technical_notes", []) or []) if str(x).strip()]
+    out["technical_notes"] = technical_notes[:5]
 
     if not str(out.get("plain_english_explainer", "")).strip():
         out["plain_english_explainer"] = (
             "This company failed because debt and cash pressure stayed high while revenue momentum weakened. "
             "The benchmark survivors kept stronger liquidity and lower leverage."
         )
+    out["plain_english_explainer"] = _clean_reasoning_line(str(out.get("plain_english_explainer", "")), max_len=420)
 
     if not str(out.get("executive_summary", "")).strip():
         out["executive_summary"] = (
             "Consensus view: distress risk is materially reducible by applying survivor-like balance sheet and liquidity discipline."
         )
+    out["executive_summary"] = _clean_reasoning_line(str(out.get("executive_summary", "")), max_len=260)
 
     return out
 
@@ -1001,6 +1207,85 @@ def _compose_failure_narrative(
     )
 
 
+def _build_analyst_deep_dive(
+    *,
+    profile_name: str,
+    profile_ticker: str,
+    profile_industry: str,
+    failing_metrics: Dict[str, Optional[float]],
+    comparison: Dict[str, object],
+    failing_risk_score: float,
+    simulation: Dict[str, object],
+    layers: Dict[str, Dict[str, object]],
+    reasoning: Dict[str, object],
+    intelligence: Dict[str, object],
+    qual: Dict[str, object],
+) -> str:
+    survivor_avg = comparison.get("survivor_average_metrics", {}) or {}
+
+    dte = float(failing_metrics.get("debt_to_equity") or 0.0)
+    dte_surv = float(survivor_avg.get("debt_to_equity") or 0.0)
+    cr = float(failing_metrics.get("current_ratio") or 0.0)
+    cr_surv = float(survivor_avg.get("current_ratio") or 0.0)
+    rg = float(failing_metrics.get("revenue_growth") or 0.0)
+    rg_surv = float(survivor_avg.get("revenue_growth") or 0.0)
+
+    macro_signal = _first_note(
+        list(intelligence.get("macro_notes", []) or []),
+        "Macro conditions were adverse and credit remained tight.",
+    )
+    micro_signal = _first_note(
+        list(intelligence.get("micro_notes", []) or []),
+        "Company-specific execution and funding pressure accelerated the downside.",
+    )
+    industry_signal = _first_note(
+        list(intelligence.get("industry_notes", []) or []),
+        f"The {profile_industry} environment showed elevated structural pressure.",
+    )
+    news_signal = _first_note(
+        list(intelligence.get("news_notes", []) or []),
+        "News flow pointed to escalating distress signals before collapse.",
+    )
+
+    fin_signals = ", ".join(list(layers.get("financial_health", {}).get("signals", []))[:3]) or "balance-sheet stress"
+    biz_signals = ", ".join(list(layers.get("business_model", {}).get("signals", []))[:2]) or "demand-side fragility"
+    op_signals = ", ".join(list(layers.get("operational", {}).get("signals", []))[:2]) or "operating resilience limits"
+    qual_summary = str(qual.get("forensic_summary", "Qualitative pressure remained elevated."))
+
+    prevention = list(reasoning.get("prevention_measures", []) or [])
+    p1 = prevention[0] if len(prevention) > 0 else "reduce leverage toward survivor norms"
+    p2 = prevention[1] if len(prevention) > 1 else "rebuild liquidity buffers before refinancing windows close"
+    p3 = prevention[2] if len(prevention) > 2 else "stabilize demand and cost structure early"
+
+    adjusted = float(simulation.get("adjusted_score", failing_risk_score))
+    improvement = float(simulation.get("improvement_percentage", 0.0))
+
+    essay = (
+        f"{profile_name} ({profile_ticker}) presents a classic distress progression in which fragile financial structure met an "
+        f"unforgiving operating and market environment. The model-estimated risk score of {failing_risk_score:.1f}/100 is not driven "
+        f"by one isolated factor; it is the combined result of leverage, liquidity pressure, weakening growth quality, and external stress. "
+        f"Relative to survivor peers, leverage appears substantially heavier (debt-to-equity {dte:.2f} vs {dte_surv:.2f}), while near-term "
+        f"liquidity is materially thinner (current ratio {cr:.2f} vs {cr_surv:.2f}). Revenue momentum also trails survivor cohorts "
+        f"({rg:.2f} vs {rg_surv:.2f}), which reduces flexibility exactly when the balance sheet needs it most.\n\n"
+        f"From a layered diagnostics perspective, the financial layer is the strongest contributor to downside ({fin_signals}), while the "
+        f"business layer indicates demand fragility ({biz_signals}). Operationally, the system sees {op_signals}. This pattern means the company "
+        f"was not only exposed to macro pressure, but also lacked the internal cushion to absorb volatility. The qualitative forensics module "
+        f"corroborates this direction: {qual_summary}\n\n"
+        f"Macro and external intelligence strengthen the same conclusion. Macro signal: {macro_signal} Micro/company signal: {micro_signal} "
+        f"Industry signal: {industry_signal} News sequence signal: {news_signal} Taken together, these indicate that leadership and financing "
+        f"decisions likely reacted too late to deteriorating conditions. In practice, once refinancing pressure and confidence erosion begin "
+        f"to interact, optionality collapses quickly.\n\n"
+        f"The counterfactual twin shows this was not inevitable: if core metrics were aligned to survivor benchmarks, modeled risk falls to "
+        f"{adjusted:.1f}/100, an improvement of {improvement:.1f}%. That delta is large enough to imply that prevention required earlier balance-sheet "
+        f"discipline and tighter operating controls, not just a better market cycle. The highest-impact path is to {p1}; then {p2}; and finally {p3}. "
+        f"This sequence addresses solvency risk first, execution risk second, and long-term resilience third."
+    )
+    essay = _humanize_gap_terms(essay)
+    essay = re.sub(r"[ \t]+", " ", essay)
+    essay = re.sub(r"\n{3,}", "\n\n", essay).strip()
+    return essay
+
+
 def _build_report_bundle(
     profile_name: str,
     ticker: str,
@@ -1012,12 +1297,14 @@ def _build_report_bundle(
     metric_gaps: Dict[str, object],
     qual_summary: Optional[Dict[str, Any]] = None,
     failure_narrative: str = "",
+    analyst_deep_dive: str = "",
 ) -> Tuple[str, str]:
     payload = {
         "generated_at": datetime.utcnow().isoformat() + "Z",
         "company": {"name": profile_name, "ticker": ticker, "failed": failed},
         "summary": reasoning,
         "failure_narrative": failure_narrative,
+        "analyst_deep_dive": analyst_deep_dive,
         "scores": {
             "failing_risk_score": failing_risk_score,
             "adjusted_risk_score": simulation.get("adjusted_score"),
@@ -1053,6 +1340,8 @@ def _build_report_bundle(
         md.append(f"- {item}")
     if failure_narrative:
         md.extend(["", failure_narrative])
+    if analyst_deep_dive:
+        md.extend(["", "## Analyst Deep Dive", analyst_deep_dive])
     md.extend(["", "## What Survivors Did Differently"])
     for item in reasoning.get("survivor_differences", [])[:3]:
         md.append(f"- {item}")
@@ -1172,6 +1461,8 @@ def main() -> None:
         st.session_state["assistant_pending_question"] = None
     if "assistant_waiting" not in st.session_state:
         st.session_state["assistant_waiting"] = False
+    if "assistant_compact" not in st.session_state:
+        st.session_state["assistant_compact"] = False
     if "analysis_cache" not in st.session_state:
         st.session_state["analysis_cache"] = None
 
@@ -1204,6 +1495,7 @@ def main() -> None:
         ]
         st.session_state["assistant_pending_question"] = None
         st.session_state["assistant_waiting"] = False
+        st.session_state["assistant_compact"] = False
 
     if not st.session_state.get("analysis_active", False):
         return
@@ -1373,7 +1665,7 @@ def main() -> None:
                 f"to {local_after.risk_probability*100:.1f}% under the counterfactual."
             ),
         )
-        reasoning["technical_notes"] = technical_notes[:4]
+        reasoning["technical_notes"] = [_clean_reasoning_line(x, max_len=220) for x in technical_notes[:4]]
         progress.progress(100, text="Report ready.")
 
         st.session_state["analysis_cache"] = {
@@ -1430,6 +1722,19 @@ def main() -> None:
         layers=layers,
         intelligence=intelligence,
     )
+    analyst_deep_dive = _build_analyst_deep_dive(
+        profile_name=profile.name,
+        profile_ticker=profile.ticker,
+        profile_industry=profile.industry,
+        failing_metrics=failing_metrics,
+        comparison=comparison,
+        failing_risk_score=failing_risk_score,
+        simulation=simulation,
+        layers=layers,
+        reasoning=reasoning,
+        intelligence=intelligence,
+        qual=qual,
+    )
 
     report_json, report_md = _build_report_bundle(
         profile.name,
@@ -1442,6 +1747,7 @@ def main() -> None:
         comparison["metric_gaps"],
         qual,
         failure_narrative,
+        analyst_deep_dive,
     )
 
     st.markdown("---")
@@ -1550,6 +1856,10 @@ def main() -> None:
                 reason = str(meta.get("match_reason", row.get("match_reason", "Peer fit")))
                 st.write(f"- {ticker}: {reason}")
 
+        st.markdown("#### Analyst Deep Dive")
+        essay_html = html.escape(analyst_deep_dive).replace("\n\n", "<br/><br/>")
+        st.markdown(f"<div class='explain'>{essay_html}</div>", unsafe_allow_html=True)
+
         st.markdown("#### Core Metrics")
         t1, t2 = st.columns(2)
         fail_table = _metrics_table(_clean_metrics(failing_metrics), hide_missing=True)
@@ -1578,6 +1888,12 @@ def main() -> None:
             ),
             use_container_width=True,
         )
+
+        st.markdown("#### Risk Contribution Decomposition")
+        st.altair_chart(_chart_risk_contribution(failing_components), use_container_width=True)
+
+        st.markdown("#### Layer Stress Heatmap")
+        st.altair_chart(_chart_layer_stress_heatmap(layers, intelligence, qual), use_container_width=True)
 
         st.markdown("#### Peer Positioning Map")
         st.altair_chart(
@@ -1781,10 +2097,15 @@ def main() -> None:
                 st.session_state["assistant_open"] = True
                 st.rerun()
     else:
+        _inject_assistant_panel_mode_style(bool(st.session_state.get("assistant_compact", False)))
         with st.container(key="jarvis_panel"):
-            hdr_left, hdr_right = st.columns([4.8, 1.2])
+            hdr_left, hdr_mid, hdr_right = st.columns([3.8, 1.4, 1.2])
             hdr_left.markdown("<div class='jarvis-title'>SignalForge AI</div>", unsafe_allow_html=True)
             hdr_left.markdown("<div class='jarvis-sub'>Personal AI for this report</div>", unsafe_allow_html=True)
+            mode_label = "Expand" if st.session_state.get("assistant_compact", False) else "Compact"
+            if hdr_mid.button(mode_label, key="jarvis_resize_btn", type="secondary", use_container_width=True):
+                st.session_state["assistant_compact"] = not bool(st.session_state.get("assistant_compact", False))
+                st.rerun()
             if hdr_right.button("✕", key="jarvis_close_btn", type="secondary", use_container_width=True):
                 st.session_state["assistant_open"] = False
                 st.rerun()
