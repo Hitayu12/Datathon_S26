@@ -98,6 +98,8 @@ class LayeredAnalysisEngine:
 
     def macro_layer(self) -> Dict[str, object]:
         signals: List[str] = []
+        if self.macro_stress_score >= 50:
+            signals.append("Moderate macro stress (funding and demand friction)")
         if self.macro_stress_score >= 65:
             signals.append("Elevated macro stress (rates/credit/demand)")
         if self.macro_stress_score >= 80:
