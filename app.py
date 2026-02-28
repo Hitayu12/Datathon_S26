@@ -375,6 +375,18 @@ def _friendly_metric_name(name: str) -> str:
     return mapping.get(name, name.replace("_", " ").title())
 
 
+def _friendly_theme_name(name: str) -> str:
+    mapping = {
+        "liquidity_concerns": "Liquidity Concerns",
+        "debt_stress": "Debt Stress",
+        "demand_decline": "Demand Decline",
+        "margin_pressure": "Margin Pressure",
+        "legal_regulatory": "Legal / Regulatory",
+        "bankruptcy_language": "Bankruptcy Language",
+    }
+    return mapping.get(name, name.replace("_", " ").title())
+
+
 def _clean_metrics(metrics: Dict[str, object]) -> Dict[str, object]:
     out: Dict[str, object] = {}
     for k, v in metrics.items():
@@ -483,10 +495,17 @@ def _fetch_tavily_intelligence(tavily_client: TavilyClient, company_name: str, t
         if phrase in macro_text:
             macro_score += impact
 
+    def _clean_snippet(text: str, max_len: int = 320) -> str:
+        clipped = " ".join(str(text or "").split())
+        return clipped[:max_len].strip()
+
+    qual_snippets = [_clean_snippet(s, 320) for s in qual_result.snippets if str(s).strip()]
+    qual_snippets = [s for s in qual_snippets if len(s) >= 40][:8]
+
     return {
         "macro_stress_score": max(0.0, min(100.0, macro_score)),
         "macro_notes": [macro_result.answer] + macro_result.snippets[:3],
-        "qual_snippets": qual_result.snippets,
+        "qual_snippets": qual_snippets,
         "sources": list(dict.fromkeys(macro_result.sources + qual_result.sources + strategy_result.sources + failure_result.sources)),
         "strategy_notes": [strategy_result.answer] if strategy_result.answer else [],
         "failure_check": {
@@ -560,6 +579,45 @@ def _chart_metric_gaps(metric_gaps: Dict[str, object]) -> alt.Chart:
         .configure_axisX(labelAngle=-18, labelColor="#0f172a", titleColor="#0f172a", labelPadding=8)
         .configure_axisY(labelColor="#0f172a", titleColor="#0f172a")
         .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
+        .configure(background="#ffffff")
+    )
+
+
+def _chart_nlp_theme_scores(qual: Dict[str, object]) -> alt.Chart:
+    theme_scores = dict(qual.get("theme_scores", {}) or {})
+    theme_counts = dict(qual.get("themes", {}) or {})
+    rows = []
+    for theme, score in theme_scores.items():
+        rows.append(
+            {
+                "Theme": _friendly_theme_name(theme),
+                "Score": float(score),
+                "Mentions": int(theme_counts.get(theme, 0) or 0),
+            }
+        )
+    if not rows:
+        rows = [{"Theme": "No Theme Signals", "Score": 0.0, "Mentions": 0}]
+    df = pd.DataFrame(rows)
+    return (
+        alt.Chart(df)
+        .mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
+        .encode(
+            x=alt.X("Theme:N", sort="-y", title=None),
+            y=alt.Y("Score:Q", title="Theme Severity Score (0-1)"),
+            color=alt.condition(alt.datum.Score >= 0.45, alt.value("#e63946"), alt.value("#1d8a9e")),
+            tooltip=["Theme", alt.Tooltip("Score:Q", format=".3f"), "Mentions"],
+        )
+        .properties(height=240)
+        .configure_view(strokeOpacity=0)
+        .configure_axis(
+            labelColor="#0f172a",
+            titleColor="#0f172a",
+            labelFontSize=12,
+            titleFontSize=12,
+            gridColor="#cbd5e1",
+        )
+        .configure_axisX(labelAngle=-18, labelColor="#0f172a", titleColor="#0f172a")
+        .configure_axisY(labelColor="#0f172a", titleColor="#0f172a")
         .configure(background="#ffffff")
     )
 
@@ -790,6 +848,7 @@ def _build_report_bundle(
     simulation: Dict[str, object],
     survivor_tickers: List[str],
     metric_gaps: Dict[str, object],
+    qual_summary: Optional[Dict[str, Any]] = None,
 ) -> Tuple[str, str]:
     payload = {
         "generated_at": datetime.utcnow().isoformat() + "Z",
@@ -802,6 +861,14 @@ def _build_report_bundle(
         },
         "survivor_cohort": survivor_tickers,
         "metric_gaps": metric_gaps,
+        "qualitative_forensics": {
+            "distress_intensity": (qual_summary or {}).get("distress_intensity"),
+            "confidence": (qual_summary or {}).get("confidence"),
+            "forensic_summary": (qual_summary or {}).get("forensic_summary"),
+            "theme_scores": (qual_summary or {}).get("theme_scores", {}),
+            "theme_mentions": (qual_summary or {}).get("themes", {}),
+            "keywords": (qual_summary or {}).get("keywords", [])[:15],
+        },
     }
     json_text = json.dumps(payload, indent=2)
 
@@ -826,6 +893,15 @@ def _build_report_bundle(
     md.extend(["", "## Prevention Moves"])
     for item in reasoning.get("prevention_measures", [])[:3]:
         md.append(f"- {item}")
+    md.extend(
+        [
+            "",
+            "## NLP Forensics",
+            f"- Distress intensity: **{float((qual_summary or {}).get('distress_intensity', 0.0)):.2f}/10**",
+            f"- NLP confidence: **{float((qual_summary or {}).get('confidence', 0.0))*100:.1f}%**",
+            f"- Summary: {(qual_summary or {}).get('forensic_summary', 'No qualitative summary available.')}",
+        ]
+    )
     markdown_text = "\n".join(md)
 
     return json_text, markdown_text
@@ -846,6 +922,7 @@ def _qa_context_from_report(
     layers: Dict[str, Dict[str, object]],
     local_before_prob: float,
     local_after_prob: float,
+    qual_summary: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     key_metrics = ["debt_to_equity", "current_ratio", "cash_burn", "revenue_growth", "revenue"]
     fail_core = {k: failing_metrics.get(k) for k in key_metrics}
@@ -882,6 +959,14 @@ def _qa_context_from_report(
             "local_model_probabilities": {
                 "before": local_before_prob,
                 "after": local_after_prob,
+            },
+            "qualitative_forensics": {
+                "distress_intensity": (qual_summary or {}).get("distress_intensity"),
+                "confidence": (qual_summary or {}).get("confidence"),
+                "forensic_summary": (qual_summary or {}).get("forensic_summary"),
+                "theme_scores": (qual_summary or {}).get("theme_scores", {}),
+                "theme_mentions": (qual_summary or {}).get("themes", {}),
+                "top_keywords": (qual_summary or {}).get("keywords", [])[:10],
             },
         },
     }
@@ -984,6 +1069,7 @@ def main() -> None:
         simulation = bundle["simulation"]
         recommendations = bundle["recommendations"]
         reasoning = bundle["reasoning"]
+        qual = bundle.get("qual") or qualitative_summary("", intelligence.get("qual_snippets", []))
         local_before = bundle["local_before"]
         local_after = bundle["local_after"]
     else:
@@ -1026,7 +1112,8 @@ def main() -> None:
             used_failed_imputation = False
 
         qual = qualitative_summary("", intelligence["qual_snippets"])
-        qualitative_intensity = float(sum(qual["themes"].values()))
+        raw_qual_intensity = float(qual.get("distress_intensity", sum(qual["themes"].values())))
+        qualitative_intensity = max(0.0, min(6.0, raw_qual_intensity * 0.62))
         macro_stress_score = float(intelligence["macro_stress_score"])
 
         layer_engine = LayeredAnalysisEngine(failing_metrics, qual["themes"], macro_stress_score)
@@ -1108,6 +1195,7 @@ def main() -> None:
                 "simulation": simulation,
                 "recommendations": recommendations,
                 "reasoning": reasoning,
+                "qual": qual,
                 "local_before": local_before,
                 "local_after": local_after,
             },
@@ -1143,6 +1231,7 @@ def main() -> None:
         simulation,
         survivor_tickers,
         comparison["metric_gaps"],
+        qual,
     )
 
     st.markdown("---")
@@ -1185,6 +1274,10 @@ def main() -> None:
         s2.metric("Adjusted Risk", f"{float(simulation['adjusted_score']):.2f}/100")
         s3.metric("Risk Improvement", f"{float(simulation['improvement_percentage']):.2f}%")
         s4.metric("Local Analyst", f"{local_before.risk_probability*100:.1f}%")
+        st.caption(
+            f"NLP distress intensity: {float(qual.get('distress_intensity', 0.0)):.1f}/10 "
+            f"(confidence {float(qual.get('confidence', 0.0))*100:.0f}%)."
+        )
 
         c_left, c_right = st.columns(2)
         with c_left:
@@ -1245,6 +1338,18 @@ def main() -> None:
             _chart_peer_positioning(profile.ticker, failing_metrics, failing_risk_score, survivor_rows),
             use_container_width=True,
         )
+
+        st.markdown("#### NLP Distress Forensics")
+        q1, q2, q3 = st.columns(3)
+        q1.metric("Distress Intensity", f"{float(qual.get('distress_intensity', 0.0)):.2f}/10")
+        q2.metric("NLP Confidence", f"{float(qual.get('confidence', 0.0))*100:.1f}%")
+        q3.metric("Positive vs Negated", f"{int(qual.get('positive_mentions', 0))} / {int(qual.get('negated_total', 0))}")
+
+        st.altair_chart(_chart_nlp_theme_scores(qual), use_container_width=True)
+        kdf = pd.DataFrame({"Top Keywords": list(qual.get("keywords", []))[:15]})
+        if not kdf.empty:
+            st.dataframe(kdf, use_container_width=True)
+        st.write(str(qual.get("forensic_summary", "")))
 
         st.markdown("#### Layered Signals")
         lcols = st.columns(5)
@@ -1354,6 +1459,21 @@ def main() -> None:
         for line in intelligence["failure_check"]["snippets"][:6]:
             st.write(f"- {line}")
 
+        st.markdown("### NLP Evidence Digest")
+        st.write(str(qual.get("forensic_summary", "")))
+
+        theme_evidence = dict(qual.get("theme_evidence", {}) or {})
+        shown_theme = False
+        for theme, snippets in theme_evidence.items():
+            if not snippets:
+                continue
+            shown_theme = True
+            st.markdown(f"**{_friendly_theme_name(theme)}**")
+            for item in snippets[:2]:
+                st.write(f"- {item}")
+        if not shown_theme:
+            st.write("No high-confidence qualitative evidence snippets found.")
+
         st.markdown("### Tavily Strategy Notes")
         if intelligence["strategy_notes"]:
             for note in intelligence["strategy_notes"]:
@@ -1380,6 +1500,7 @@ def main() -> None:
         layers=layers,
         local_before_prob=local_before.risk_probability,
         local_after_prob=local_after.risk_probability,
+        qual_summary=qual,
     )
 
     if not st.session_state.get("assistant_open", False):

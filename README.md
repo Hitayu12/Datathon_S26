@@ -13,6 +13,10 @@ SignalForge is a Streamlit app that verifies whether a company actually failed, 
 - Failure verification gate (Tavily + Groq)
 - Survivor cohort benchmarking
 - Digital twin simulation (risk before vs after)
+- Robust NLP forensics layer:
+  - Negation-aware distress parsing
+  - Theme-level severity scoring and evidence extraction
+  - Distress intensity/confidence scoring
 - Plain-English summary + technical deep-dive
 - Trained local analyst model (logistic classifier on distress scenarios)
 - Judge-ready features:
