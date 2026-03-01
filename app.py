@@ -40,321 +40,183 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
 
 def _inject_styles() -> None:
-    st.markdown(
-        """
-        <style>
-        :root {
-            --bg: #d3dced;
-            --card: #edf2fb;
-            --ink: #0f172a;
-            --muted: #334155;
-            --teal: #0ea5a6;
-            --navy: #1d3557;
-            --orange: #fb8500;
-            --danger: #e63946;
-            --line: #b8c6df;
-        }
-        .stApp {
-            background: radial-gradient(circle at 10% 2%, #d6e0ef 0%, #c8d4e7 38%, #bccbdd 100%);
-            color: var(--ink);
-        }
-        .block-container {
-            padding-top: 1.05rem !important;
-            max-width: 1220px !important;
-        }
-        .stApp, .stApp p, .stApp span, .stApp li, .stApp h1, .stApp h2, .stApp h3, .stApp h4 {
-            color: var(--ink);
-        }
-        div[data-testid="stWidgetLabel"] p,
-        div[data-testid="stWidgetLabel"] label,
-        .stTextInput label,
-        .stSlider label,
-        .stSelectbox label,
-        .stTextArea label {
-            color: #0f172a !important;
-            font-weight: 600 !important;
-        }
-        div[data-baseweb="input"],
-        div[data-baseweb="base-input"] {
-            background: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-        }
-        div[data-baseweb="input"] input,
-        div[data-baseweb="base-input"] input {
-            color: #0f172a !important;
-            -webkit-text-fill-color: #0f172a !important;
-            caret-color: #0f172a !important;
-        }
-        div[data-testid="stExpander"] {
-            background: #ffffff !important;
-            border: 1px solid var(--line) !important;
-            border-radius: 10px !important;
-        }
-        div[data-testid="stExpander"] details summary {
-            background: #f8fafc !important;
-            border-radius: 10px !important;
-        }
-        div[data-testid="stExpander"] details summary p,
-        div[data-testid="stExpander"] details summary span {
-            color: #0f172a !important;
-            font-weight: 600 !important;
-        }
-        div[data-baseweb="slider"] * {
-            color: #0f172a !important;
-        }
-        .hero {
-            background: linear-gradient(125deg, #11213f 0%, #1f3a63 46%, #0c8d98 100%);
-            border-radius: 18px;
-            color: #f8fbff;
-            padding: 1.25rem 1.35rem;
-            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.22);
-            margin-bottom: 1rem;
-        }
-        .hero h1 { margin: 0; font-size: 1.9rem; }
-        .hero p { margin: 0.35rem 0 0; color: #e6fbff; }
-        .step-grid { display:grid; grid-template-columns: repeat(3,minmax(120px,1fr)); gap:0.7rem; margin-top:0.9rem; }
-        .step-item { background: rgba(255,255,255,0.16); border:1px solid rgba(255,255,255,0.30); border-radius:10px; padding:0.65rem; font-size:0.9rem; }
-        .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0.85rem; box-shadow:0 8px 20px rgba(13, 30, 58, 0.12); }
-        .hint {
-            border-bottom: 1px dotted #0b5d66;
-            cursor: help;
-            font-weight: 600;
-        }
-        .wow {
-            background: linear-gradient(120deg, rgba(29,53,87,.12), rgba(14,165,166,.12));
-            border: 1px solid #9bb7d9;
-            border-radius: 12px;
-            padding: 0.7rem 0.8rem;
-            margin-bottom: 1rem;
-        }
-        .badge {
-            display:inline-block; border-radius:999px; font-size:0.8rem; font-weight:700; padding:0.28rem 0.65rem;
-            border:1px solid;
-        }
-        .badge-ok { background:#dcfce7; color:#166534; border-color:#bbf7d0; }
-        .badge-failed { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
-        .explain { background:#eaf1fb; border:1px solid var(--line); border-left:5px solid var(--teal); border-radius:14px; padding:0.9rem; margin-bottom:1.1rem; }
-        .section-gap { height: 0.9rem; }
+    st.html("""
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+:root{--bg:#080d1a;--card:rgba(255,255,255,0.04);--card-border:rgba(255,255,255,0.10);--ink:#f1f5f9;--muted:#94a3b8;--dim:#64748b;--accent:#6366f1;--accent2:#8b5cf6;--teal:#14b8a6;--green:#10b981;--red:#ef4444;--orange:#f97316;}
+html, body, .stApp, .stMarkdown, .stTextInput, .stSelectbox, .stSlider, .stTabs, .stButton, .stCaption, .stMetric {
+    font-family: 'Inter', sans-serif;
+}
+html,body,.stApp{background:#080d1a!important;color:var(--ink)!important;}
+.stApp{background:radial-gradient(ellipse at 15% 0%,#1a1040 0%,#080d1a 45%,#04091a 100%)!important;}
+.block-container{padding-top:0.8rem!important;max-width:1280px!important;}
+.stApp p,.stApp span,.stApp li,.stApp label,.stApp h1,.stApp h2,.stApp h3,.stApp h4,.stMarkdown,[data-testid="stMarkdownContainer"] p{color:var(--ink)!important;}
+.stCaption,[data-testid="stCaptionContainer"] p{color:var(--muted)!important;}
 
-        div[data-testid="stMetric"] {
-            background:#f3f7ff;
-            border:1px solid #c2d0e5;
-            border-radius:12px;
-            padding:0.7rem 0.9rem;
-            box-shadow:0 6px 16px rgba(20,33,61,0.08);
-            margin-bottom: 1rem;
-        }
-        div[data-testid="stMetricLabel"] p {
-            color:#6b7280 !important;
-            font-weight:600 !important;
-        }
-        div[data-testid="stMetricValue"] {
-            color:#0f172a !important;
-            font-weight:700 !important;
-        }
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 0.5rem;
-        }
-        .stTabs [data-baseweb="tab"] {
-            background: #ecf3ff;
-            border: 1px solid #cddcf5;
-            border-radius: 10px;
-            color: #17355e;
-            font-weight: 600;
-            padding: 0.45rem 0.8rem;
-        }
-        .stTabs [aria-selected="true"] {
-            background: #1d3557 !important;
-            color: #ffffff !important;
-            border-color: #1d3557 !important;
-        }
-        .stButton > button,
-        div[data-testid="stDownloadButton"] > button,
-        button[kind="secondary"],
-        button[kind="primary"] {
-            background: linear-gradient(120deg, #163660 0%, #0d8f99 100%);
-            color: white;
-            border: 1px solid #0d6f79;
-            border-radius: 10px;
-            font-weight: 700;
-            box-shadow: 0 6px 14px rgba(20, 33, 61, 0.23);
-            opacity: 1 !important;
-        }
-        .stButton > button:hover,
-        div[data-testid="stDownloadButton"] > button:hover,
-        button[kind="secondary"]:hover,
-        button[kind="primary"]:hover {
-            filter: brightness(1.08);
-            border-color: #0ea5a6;
-        }
-        .stButton > button span,
-        div[data-testid="stDownloadButton"] > button span {
-            color: #ffffff !important;
-            font-weight: 700 !important;
-        }
-        div[data-testid="stDownloadButton"] {
-            width: 100%;
-        }
-        div[data-testid="stDownloadButton"] > button {
-            width: 100%;
-        }
-        .stTabs [data-baseweb="tab"] p,
-        .stTabs [data-baseweb="tab"] span {
-            color: inherit !important;
-        }
-        .stVegaLiteChart text,
-        .vega-embed text {
-            fill: #0f172a !important;
-            color: #0f172a !important;
-            font-weight: 600 !important;
-        }
-        .stVegaLiteChart .role-axis-label text,
-        .stVegaLiteChart .role-legend text {
-            fill: #0f172a !important;
-        }
-        .st-key-jarvis_trigger {
-            position: fixed;
-            right: 18px;
-            bottom: 18px;
-            width: 148px;
-            z-index: 10001;
-        }
-        .st-key-jarvis_trigger > div {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-        }
-        .st-key-jarvis_trigger .stButton > button {
-            height: 48px;
-            border-radius: 999px !important;
-            padding: 0.45rem 0.82rem !important;
-            font-size: 0.84rem !important;
-            font-weight: 700 !important;
-            white-space: nowrap;
-            background: linear-gradient(120deg, #18c4ad 0%, #25b5ca 100%) !important;
-            border: 1px solid #75d7cd !important;
-            color: #032a2f !important;
-            box-shadow: 0 10px 20px rgba(10, 75, 95, 0.42) !important;
-        }
-        .st-key-jarvis_panel {
-            position: fixed;
-            right: 18px;
-            bottom: 84px;
-            width: min(470px, 95vw);
-            max-height: min(74vh, 720px);
-            z-index: 10000;
-            background: radial-gradient(circle at 8% 6%, #0b1f45 0%, #061833 44%, #020f26 100%);
-            border: 1px solid rgba(101, 163, 255, 0.3);
-            border-radius: 20px;
-            box-shadow: 0 20px 52px rgba(2, 6, 23, 0.58);
-            padding: 0.9rem;
-            backdrop-filter: blur(8px);
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-        .st-key-jarvis_panel p,
-        .st-key-jarvis_panel label,
-        .st-key-jarvis_panel span,
-        .st-key-jarvis_panel h1,
-        .st-key-jarvis_panel h2,
-        .st-key-jarvis_panel h3 {
-            color: #dbeafe !important;
-        }
-        .st-key-jarvis_panel div[data-baseweb="input"],
-        .st-key-jarvis_panel div[data-baseweb="base-input"] {
-            background: rgba(10, 20, 38, 0.92) !important;
-            border: 1px solid #32496e !important;
-            border-radius: 999px !important;
-            min-height: 44px !important;
-        }
-        .st-key-jarvis_panel div[data-baseweb="input"] input,
-        .st-key-jarvis_panel div[data-baseweb="base-input"] input {
-            color: #e2e8f0 !important;
-            -webkit-text-fill-color: #e2e8f0 !important;
-            padding: 0.52rem 0.86rem !important;
-            font-size: 0.97rem !important;
-            line-height: 1.2 !important;
-        }
-        .st-key-jarvis_panel div[data-testid="InputInstructions"] {
-            display: none !important;
-        }
-        .st-key-jarvis_panel form {
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            background: transparent !important;
-        }
-        .st-key-jarvis_panel .stButton > button {
-            border-radius: 999px !important;
-            white-space: nowrap !important;
-            font-size: 0.95rem !important;
-            min-height: 44px !important;
-            padding: 0.4rem 0.9rem !important;
-            width: 100% !important;
-            line-height: 1.1 !important;
-        }
-        .st-key-jarvis_panel button[kind="secondary"] {
-            background: #0a1a34 !important;
-            border: 1px solid #3c5174 !important;
-            color: #e5e7eb !important;
-            box-shadow: none !important;
-        }
-        .st-key-jarvis_panel button[kind="primary"] {
-            background: linear-gradient(120deg, #20c9b1, #29b8d1) !important;
-            border: 1px solid #77e0d8 !important;
-            color: #062a33 !important;
-            box-shadow: none !important;
-        }
-        .jarvis-title { color:#f8fafc !important; font-size:1.45rem; font-weight:700; line-height:1; margin-bottom:.15rem; }
-        .jarvis-sub { color:#a6bddf !important; font-size:.8rem; margin-bottom:.2rem; }
-        .flow-grid {
-            display:grid;
-            grid-template-columns: repeat(3, minmax(180px, 1fr));
-            gap: 0.55rem;
-            margin-top: 0.4rem;
-            margin-bottom: 0.5rem;
-        }
-        .flow-card {
-            background: #eef5ff;
-            border: 1px solid #c6d8f2;
-            border-radius: 12px;
-            padding: 0.56rem 0.62rem;
-            color: #0f172a;
-            box-shadow: 0 4px 11px rgba(16, 33, 61, 0.08);
-            font-size: 0.88rem;
-            line-height: 1.3;
-        }
-        .flow-card b {
-            color: #12345b;
-        }
-        .flow-arrow {
-            text-align: center;
-            color: #1d3557;
-            font-weight: 700;
-            font-size: 1rem;
-            margin: 0.1rem 0 0.2rem;
-        }
-        @media (max-width: 640px) {
-            .st-key-jarvis_panel {
-                right: 10px;
-                bottom: 74px;
-                width: calc(100vw - 20px);
-                max-height: 60vh;
-                border-radius: 16px;
-            }
-            .st-key-jarvis_trigger {
-                right: 10px;
-                bottom: 10px;
-            }
-            .jarvis-title {
-                font-size: 1.3rem;
-            }
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+
+[data-testid="stSidebar"]{background:#0a1020!important;border-right:1px solid rgba(255,255,255,0.06)!important;}
+[data-testid="stSidebar"] .stMarkdown p,[data-testid="stSidebar"] label,[data-testid="stSidebar"] span{color:var(--ink)!important;}
+[data-testid="stSidebar"] [data-baseweb="select"]{background:rgba(255,255,255,0.06)!important;border-color:rgba(255,255,255,0.12)!important;}
+[data-testid="stSidebar"] [data-baseweb="select"] span{color:var(--ink)!important;}
+div[data-baseweb="input"],div[data-baseweb="base-input"]{background:rgba(255,255,255,0.06)!important;border:1px solid rgba(255,255,255,0.12)!important;border-radius:10px!important;}
+div[data-baseweb="input"] input,div[data-baseweb="base-input"] input{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;caret-color:var(--accent)!important;}
+div[data-testid="stWidgetLabel"] p,div[data-testid="stWidgetLabel"] label,.stTextInput label,.stSlider label,.stSelectbox label,.stTextArea label{color:var(--muted)!important;font-weight:500!important;font-size:0.82rem!important;letter-spacing:0.03em!important;text-transform:uppercase!important;}
+div[data-testid="stMetric"]{background:var(--card)!important;border:1px solid var(--card-border)!important;border-radius:14px!important;padding:0.8rem 1rem!important;backdrop-filter:blur(8px);transition:transform 0.18s,border-color 0.18s;}
+div[data-testid="stMetric"]:hover{transform:translateY(-2px);border-color:rgba(99,102,241,0.4)!important;}
+div[data-testid="stMetricLabel"] p{color:var(--muted)!important;font-size:0.78rem!important;font-weight:600!important;letter-spacing:0.04em;text-transform:uppercase;}
+div[data-testid="stMetricValue"]{color:var(--ink)!important;font-weight:800!important;font-size:1.6rem!important;}
+.stTabs [data-baseweb="tab-list"]{background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.07)!important;border-radius:12px!important;padding:4px!important;gap:2px!important;}
+.stTabs [data-baseweb="tab"]{background:transparent!important;border:none!important;border-radius:9px!important;color:var(--muted)!important;font-weight:600!important;font-size:0.82rem!important;padding:0.42rem 0.9rem!important;transition:all 0.15s;}
+.stTabs [data-baseweb="tab"]:hover{color:var(--ink)!important;background:rgba(255,255,255,0.05)!important;}
+.stTabs [aria-selected="true"]{background:rgba(99,102,241,0.22)!important;color:#c4b5fd!important;border:1px solid rgba(99,102,241,0.35)!important;}
+.stTabs [data-baseweb="tab"] p,.stTabs [data-baseweb="tab"] span{color:inherit!important;}
+.stButton>button,div[data-testid="stDownloadButton"]>button{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)!important;color:#fff!important;border:none!important;border-radius:10px!important;font-weight:700!important;font-size:0.88rem!important;box-shadow:0 0 18px rgba(99,102,241,0.35)!important;transition:filter 0.18s,transform 0.15s,box-shadow 0.18s!important;}
+.stButton>button:hover,div[data-testid="stDownloadButton"]>button:hover{filter:brightness(1.12)!important;transform:translateY(-1px)!important;box-shadow:0 0 26px rgba(99,102,241,0.55)!important;}
+.stButton>button[kind="secondary"]{background:rgba(255,255,255,0.07)!important;border:1px solid rgba(255,255,255,0.12)!important;box-shadow:none!important;color:var(--muted)!important;}
+.stButton>button span,div[data-testid="stDownloadButton"]>button span{color:inherit!important;font-weight:700!important;}
+div[data-testid="stDownloadButton"]{width:100%!important;}
+div[data-testid="stDownloadButton"]>button{width:100%!important;}
+div[data-testid="stExpander"]{background:var(--card)!important;border:1px solid var(--card-border)!important;border-radius:12px!important;backdrop-filter:blur(6px);}
+div[data-testid="stExpander"] details summary p,div[data-testid="stExpander"] details summary span{color:var(--ink)!important;font-weight:600!important;}
+div[data-baseweb="slider"] [role="slider"]{background:var(--accent)!important;}
+[data-baseweb="select"] [data-baseweb="menu"]{background:#0f1929!important;border:1px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;}
+[data-baseweb="select"] li{color:var(--ink)!important;}
+[data-baseweb="select"] li:hover{background:rgba(99,102,241,0.15)!important;}
+[data-testid="stDataFrame"]{border:1px solid rgba(255,255,255,0.08)!important;border-radius:12px!important;overflow:hidden;}
+[data-testid="stDataFrame"] th{background:rgba(99,102,241,0.15)!important;color:#c4b5fd!important;font-weight:700!important;}
+[data-testid="stDataFrame"] td{color:var(--ink)!important;background:rgba(255,255,255,0.02)!important;}
+.stVegaLiteChart,.vega-embed{background:transparent!important;}
+div[data-testid="stAlert"]{border-radius:12px!important;border-left-width:4px!important;}
+div[data-testid="stVerticalBlockBorderWrapper"]>div{border:1px solid var(--card-border)!important;border-radius:16px!important;background:var(--card)!important;backdrop-filter:blur(8px);padding:1rem!important;}
+.hero{background:linear-gradient(135deg,#0f1e3d 0%,#1a1040 50%,#0a1e3c 100%);border:1px solid rgba(99,102,241,0.25);border-radius:20px;padding:1.5rem 1.8rem;box-shadow:0 0 60px rgba(99,102,241,0.1),0 20px 40px rgba(0,0,0,0.4);margin-bottom:1.2rem;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(139,92,246,0.2) 0%,transparent 70%);border-radius:50%;}
+.hero h1{margin:0;font-size:1.85rem;font-weight:800;color:#fff;letter-spacing:-0.02em;}
+.hero .subtitle{margin:0.4rem 0 0;color:#a5b4fc;font-size:0.93rem;}
+.step-grid{display:grid;grid-template-columns:repeat(3,minmax(110px,1fr));gap:0.65rem;margin-top:1rem;}
+.step-item{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.65rem 0.75rem;font-size:0.85rem;line-height:1.4;color:#cbd5e1;}
+.step-item b{color:#a5b4fc;display:block;margin-bottom:0.2rem;}
+.loop-card{border-radius:18px;padding:1.1rem 1.2rem;position:relative;overflow:hidden;min-height:200px;backdrop-filter:blur(10px);}
+.loop-card.danger{background:linear-gradient(135deg,rgba(239,68,68,0.12) 0%,rgba(239,68,68,0.05) 100%);border:1px solid rgba(239,68,68,0.35);box-shadow:0 0 30px rgba(239,68,68,0.08);}
+.loop-card.success{background:linear-gradient(135deg,rgba(16,185,129,0.12) 0%,rgba(16,185,129,0.05) 100%);border:1px solid rgba(16,185,129,0.35);box-shadow:0 0 30px rgba(16,185,129,0.08);}
+.loop-card.purple{background:linear-gradient(135deg,rgba(139,92,246,0.14) 0%,rgba(99,102,241,0.06) 100%);border:1px solid rgba(139,92,246,0.35);box-shadow:0 0 30px rgba(139,92,246,0.1);}
+.loop-card-title{font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:0.8rem;}
+.loop-stat{display:flex;justify-content:space-between;align-items:center;padding:0.32rem 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.87rem;}
+.loop-stat:last-of-type{border-bottom:none;}
+.loop-stat-label{color:var(--muted);}
+.loop-stat-value{font-weight:700;color:var(--ink);}
+.loop-footer{margin-top:0.7rem;font-size:0.76rem;color:var(--dim);}
+.badge{display:inline-flex;align-items:center;gap:0.3rem;border-radius:999px;font-size:0.78rem;font-weight:700;padding:0.28rem 0.75rem;border:1px solid;letter-spacing:0.03em;}
+.badge-ok{background:rgba(16,185,129,0.15);color:#6ee7b7;border-color:rgba(16,185,129,0.35);}
+.badge-failed{background:rgba(239,68,68,0.15);color:#fca5a5;border-color:rgba(239,68,68,0.35);}
+.badge-warn{background:rgba(245,158,11,0.15);color:#fcd34d;border-color:rgba(245,158,11,0.35);}
+.explain{background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-left:4px solid var(--accent);border-radius:14px;padding:1rem 1.1rem;color:var(--ink);line-height:1.65;font-size:0.93rem;}
+.wow{background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(20,184,166,0.08));border:1px solid rgba(99,102,241,0.25);border-radius:14px;padding:0.75rem 0.9rem;font-size:0.88rem;color:#c4b5fd;}
+.panel{background:var(--card);border:1px solid var(--card-border);border-radius:16px;padding:1rem 1.2rem;}
+.hint{border-bottom:1px dotted var(--accent);cursor:help;font-weight:600;color:#a5b4fc;}
+.flow-grid{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:0.55rem;margin:0.6rem 0;}
+.flow-card{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:0.65rem 0.75rem;color:var(--ink);font-size:0.86rem;line-height:1.35;}
+.flow-card b{color:#a5b4fc;display:block;margin-bottom:0.2rem;}
+.council-card{background:linear-gradient(135deg,rgba(99,102,241,0.08) 0%,rgba(139,92,246,0.05) 100%);border:1px solid rgba(99,102,241,0.25);border-radius:16px;padding:1.1rem 1.2rem;margin-bottom:0.8rem;position:relative;}
+.council-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#6366f1,#8b5cf6);border-radius:3px 0 0 3px;}
+.council-model-badge{display:inline-flex;align-items:center;gap:0.3rem;background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);border-radius:999px;padding:0.15rem 0.55rem;font-size:0.72rem;font-weight:700;margin-bottom:0.6rem;}
+.council-driver{display:flex;align-items:flex-start;gap:0.5rem;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:10px;padding:0.55rem 0.7rem;margin:0.3rem 0;font-size:0.87rem;color:var(--ink);line-height:1.4;}
+.council-strategy{display:flex;align-items:flex-start;gap:0.5rem;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:0.55rem 0.7rem;margin:0.3rem 0;font-size:0.87rem;color:var(--ink);line-height:1.4;}
+.council-prevention{display:flex;align-items:flex-start;gap:0.5rem;background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.15);border-radius:10px;padding:0.55rem 0.7rem;margin:0.3rem 0;font-size:0.87rem;color:var(--ink);line-height:1.4;}
+.council-exec-summary{background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(99,102,241,0.06));border:1px solid rgba(139,92,246,0.3);border-radius:16px;padding:1.1rem 1.3rem;margin-bottom:1.2rem;font-size:0.95rem;line-height:1.65;color:#e2e8f0;}
+.council-disagree{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:0.65rem 0.8rem;font-size:0.86rem;color:#fcd34d;margin:0.3rem 0;}
+.st-key-jarvis_trigger{position:fixed;right:20px;bottom:20px;width:148px;z-index:10001;}
+.st-key-jarvis_trigger>div{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important;}
+.st-key-jarvis_trigger .stButton>button{height:48px;border-radius:999px!important;background:linear-gradient(135deg,#6366f1 0%,#14b8a6 100%)!important;border:none!important;box-shadow:0 4px 20px rgba(99,102,241,0.5)!important;font-size:0.85rem!important;font-weight:700!important;color:#fff!important;white-space:nowrap;}
+.st-key-jarvis_trigger .stButton>button:hover{box-shadow:0 0 30px rgba(99,102,241,0.7)!important;transform:translateY(-2px)!important;}
+.st-key-jarvis_panel{position:fixed;right:20px;bottom:84px;width:min(480px,95vw);max-height:min(76vh,740px);z-index:10000;background:#0a1020;border:1px solid rgba(99,102,241,0.3);border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 40px rgba(99,102,241,0.1);padding:1rem;backdrop-filter:blur(16px);overflow-x:hidden;overflow-y:auto;}
+.st-key-jarvis_panel p,.st-key-jarvis_panel label,.st-key-jarvis_panel span,.st-key-jarvis_panel h1,.st-key-jarvis_panel h2,.st-key-jarvis_panel h3{color:#e2e8f0!important;}
+.st-key-jarvis_panel div[data-baseweb="input"],.st-key-jarvis_panel div[data-baseweb="base-input"]{background:rgba(255,255,255,0.06)!important;border:1px solid rgba(99,102,241,0.3)!important;border-radius:999px!important;min-height:44px!important;}
+.st-key-jarvis_panel div[data-baseweb="input"] input,.st-key-jarvis_panel div[data-baseweb="base-input"] input{color:#e2e8f0!important;-webkit-text-fill-color:#e2e8f0!important;}
+.st-key-jarvis_panel form{border:none!important;padding:0!important;margin:0!important;background:transparent!important;}
+.st-key-jarvis_panel .stButton>button{border-radius:999px!important;font-size:0.92rem!important;min-height:44px!important;width:100%!important;}
+.jarvis-title{color:#f8fafc!important;font-size:1.4rem;font-weight:800;line-height:1;}
+.jarvis-sub{color:#94a3b8!important;font-size:0.78rem;margin-top:0.15rem;}
+.chat-bubble-ai{background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:14px 14px 14px 4px;padding:0.65rem 0.8rem;color:#e2e8f0;font-size:0.91rem;line-height:1.5;margin-bottom:0.4rem;}
+.chat-bubble-user{background:rgba(20,184,166,0.1);border:1px solid rgba(20,184,166,0.2);border-radius:14px 14px 4px 14px;padding:0.6rem 0.75rem;color:#ccfbf1;font-size:0.89rem;line-height:1.45;text-align:right;margin-bottom:0.4rem;}
+@media(max-width:640px){.st-key-jarvis_panel{right:10px;bottom:74px;width:calc(100vw - 20px);max-height:62vh;}.st-key-jarvis_trigger{right:10px;bottom:12px;}.flow-grid,.step-grid{grid-template-columns:1fr 1fr;}}
+/* ── Ensure Streamlit Icons Survive ── */
+.material-symbols-rounded, .material-symbols-outlined, .material-icons,
+span[class^="material-symbols"], span[class*=" material-symbols"],
+[data-testid="stExpanderToggleIcon"], [data-testid="stExpanderToggleIcon"] * {
+    font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    display: inline-block !important;
+    white-space: nowrap !important;
+    word-wrap: normal !important;
+    direction: ltr !important;
+    font-feature-settings: 'liga' !important;
+    -webkit-font-feature-settings: 'liga' !important;
+    -webkit-font-smoothing: antialiased !important;
+    color: var(--muted) !important;
+}
+
+/* ── AI Typing Animation ── */
+.typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.2rem 0;
+}
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    background-color: var(--accent);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+/* ── Consistent Font for Signal Board & Cards ── */
+.council-card, .council-card p, .council-card li, .council-card div {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+    color: #cbd5e1 !important;
+}
+.council-driver, .council-strategy {
+    font-size: 0.95rem !important;
+    color: #f1f5f9 !important;
+    margin-bottom: 0.5rem !important;
+    padding-left: 1rem !important;
+    border-left: 2px solid rgba(255,255,255,0.1);
+}
+.council-model-badge {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+}
+
+/* ── Dropdown / Popover Fixes ── */
+div[data-baseweb="popover"], div[data-baseweb="popover"] > div { background: #0a1020 !important; }
+ul[role="listbox"], ul[role="listbox"] > li { background: #0a1020 !important; color: #f1f5f9 !important; }
+li[role="option"]:hover, li[role="option"][aria-selected="true"] { background: rgba(255,255,255,0.1) !important; }
+div[role="listbox"] { background: #0a1020 !important; }
+
+
+
+</style>
+    
+
+""")
 
 
 def _render_header() -> None:
@@ -435,245 +297,255 @@ def _legacy_reasoning_from_council(council_output: Dict[str, Any]) -> Dict[str, 
 
 
 def _render_council_tab(council_output: Dict[str, Any]) -> None:
-    st.markdown("### Council Output")
-    st.markdown(
-        f"<div class='explain'>{html.escape(str(council_output.get('executive_summary', 'Evidence unavailable')))}</div>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+    exec_summary = str(council_output.get("executive_summary", "") or "").strip()
+    if exec_summary:
+        st.markdown(
+            f"<div class='council-exec-summary'>🧠 <strong>Executive Summary</strong><br/><br/>{html.escape(exec_summary)}</div>",
+            unsafe_allow_html=True,
+        )
+
+    # Metrics row
     impact = dict(council_output.get("counterfactual_impact", {}) or {})
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Overall Confidence", f"{float(council_output.get('overall_confidence', 0.0))*100:.1f}%")
-    c2.metric("Before Score", f"{float(impact.get('before_score', 0.0)):.2f}")
-    c3.metric("After Score", f"{float(impact.get('after_score', 0.0)):.2f}")
-    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+    confidence = float(council_output.get("overall_confidence", 0.0))
+    before_score = float(impact.get("before_score", 0.0))
+    after_score = float(impact.get("after_score", 0.0))
+    reduction = max(0.0, before_score - after_score)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Council Confidence", f"{confidence*100:.1f}%")
+    c2.metric("Risk Before", f"{before_score:.2f}")
+    c3.metric("Risk After Fixes", f"{after_score:.2f}")
+    c4.metric("Risk Reduction", f"{reduction:.2f}", delta=f"-{reduction:.2f}" if reduction > 0 else "No change")
 
-    st.markdown("#### Failure Drivers")
-    for item in list(council_output.get("failure_drivers", []) or [])[:5]:
-        evidence_ids = ", ".join(f"[{eid}]" for eid in list((item or {}).get("evidence_ids", []) or [])) or "Evidence unavailable"
-        st.write(f"- {item.get('driver', 'Evidence unavailable')} | citations: {evidence_ids} | confidence {float(item.get('confidence', 0.0))*100:.0f}%")
+    st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
 
-    st.markdown("#### Survivor Strategies")
-    for item in list(council_output.get("survivor_strategies", []) or [])[:5]:
-        evidence_ids = ", ".join(f"[{eid}]" for eid in list((item or {}).get("evidence_ids", []) or [])) or "Evidence unavailable"
-        st.write(f"- {item.get('strategy', 'Evidence unavailable')} | citations: {evidence_ids} | confidence {float(item.get('confidence', 0.0))*100:.0f}%")
+    col_a, col_b = st.columns(2)
 
-    disagreements = list(council_output.get("disagreements", []) or [])
-    if disagreements:
-        st.markdown("#### Disagreements")
-        for row in disagreements[:5]:
-            st.write(f"**{row.get('topic', 'Open issue')}**")
-            st.write(f"- Groq: {row.get('groq_view', '')}")
-            st.write(f"- watsonx: {row.get('watsonx_view', '')}")
-            st.write(f"- Local: {row.get('local_view', '')}")
+    with col_a:
+        drivers = list(council_output.get("failure_drivers", []) or [])
+        if drivers:
+            items_html = ""
+            for item in drivers[:6]:
+                d = html.escape(str((item or {}).get("driver", "Unknown driver")))
+                conf = float((item or {}).get("confidence", 0.0)) * 100
+                items_html += f"<div class='council-driver'><span>{d} <span style='color:#ef4444;font-weight:700;font-size:0.78rem;margin-left:auto;white-space:nowrap;'>{conf:.0f}% conf</span></span></div>"
+            st.markdown(
+                f"<div class='council-card'>"
+                f"<div class='council-model-badge'>⚡ Failure Drivers</div>"
+                f"{items_html}</div>",
+                unsafe_allow_html=True,
+            )
 
-    st.markdown("#### Final Recommendations")
-    for item in list(council_output.get("final_recommendations", []) or [])[:5]:
-        st.write(f"- {item.get('action', 'Evidence unavailable')} -> {item.get('expected_effect', 'Evidence unavailable')} (confidence {float(item.get('confidence', 0.0))*100:.0f}%)")
+        recommendations = list(council_output.get("final_recommendations", []) or [])
+        if recommendations:
+            items_html = ""
+            for i, item in enumerate(recommendations[:5], 1):
+                action = html.escape(str((item or {}).get("action", "")))
+                effect = html.escape(str((item or {}).get("expected_effect", "")))
+                conf = float((item or {}).get("confidence", 0.0)) * 100
+                items_html += (
+                    f"<div class='council-prevention'>"
+                    f"<span><strong>{i}. {action}</strong>"
+                    f"{'<br/><span style=color:var(--muted);font-size:0.82rem>' + effect + '</span>' if effect else ''}"
+                    f"<span style='color:#a5b4fc;font-size:0.76rem;'> — {conf:.0f}% conf</span></span></div>"
+                )
+            st.markdown(
+                f"<div class='council-card'>"
+                f"<div class='council-model-badge'>🛡 Final Recommendations</div>"
+                f"{items_html}</div>",
+                unsafe_allow_html=True,
+            )
 
+    with col_b:
+        strategies = list(council_output.get("survivor_strategies", []) or [])
+        if strategies:
+            items_html = ""
+            for item in strategies[:6]:
+                s = html.escape(str((item or {}).get("strategy", "Unknown strategy")))
+                conf = float((item or {}).get("confidence", 0.0)) * 100
+                items_html += f"<div class='council-strategy'><span>{s} <span style='color:#10b981;font-weight:700;font-size:0.78rem;'>{conf:.0f}%</span></span></div>"
+            st.markdown(
+                f"<div class='council-card'>"
+                f"<div class='council-model-badge' style='background:rgba(16,185,129,0.15);color:#6ee7b7;border-color:rgba(16,185,129,0.3);'>✓ Survivor Strategies</div>"
+                f"{items_html}</div>",
+                unsafe_allow_html=True,
+            )
+
+        disagreements = list(council_output.get("disagreements", []) or [])
+        if disagreements:
+            items_html = ""
+            for row in disagreements[:4]:
+                topic = html.escape(str((row or {}).get("topic", "Open issue")))
+                groq_v = html.escape(str((row or {}).get("groq_view", "")))
+                wx_v = html.escape(str((row or {}).get("watsonx_view", "")))
+                items_html += (
+                    f"<div class='council-disagree'><strong>⚠ {topic}</strong>"
+                    f"{'<br/><span style=color:var(--muted)>Groq: ' + groq_v + '</span>' if groq_v else ''}"
+                    f"{'<br/><span style=color:var(--muted)>watsonx: ' + wx_v + '</span>' if wx_v else ''}"
+                    f"</div>"
+                )
+            st.markdown(
+                f"<div class='council-card' style='border-color:rgba(245,158,11,0.3)'>"
+                f"<div class='council-model-badge' style='background:rgba(245,158,11,0.15);color:#fcd34d;border-color:rgba(245,158,11,0.3);'>⚠ Council Disagreements</div>"
+                f"{items_html}</div>",
+                unsafe_allow_html=True,
+            )
+
+    # Model breakdown as compact expander
     breakdown = dict(council_output.get("model_breakdown", {}) or {})
-    st.markdown("#### Model Breakdown")
-    for key in ["groq", "watsonx", "local"]:
-        row = dict(breakdown.get(key, {}) or {})
-        with st.expander(f"{key.title()} Breakdown", expanded=False):
-            st.write(f"- Latency: {int(row.get('latency_ms', 0) or 0)} ms")
-            st.write(f"- Errors: {row.get('errors') or 'None'}")
-            raw = dict(row.get("raw", {}) or {})
-            if key == "groq":
-                st.write(f"- Summary: {raw.get('executive_summary', 'No summary returned.')}")
-                st.write("Top findings:")
-                for item in list(raw.get("failure_drivers", []) or [])[:3]:
-                    if isinstance(item, dict):
-                        st.write(f"  - {item.get('driver', 'No driver returned.')}")
-                    else:
-                        st.write(f"- {item}")
-                st.write("Proposed actions:")
-                for item in list(raw.get("final_recommendations", []) or [])[:3]:
-                    if isinstance(item, dict):
-                        st.write(f"- {item.get('action', 'No action returned.')}")
-            elif key == "watsonx":
-                if "supported_claims" in raw or "unsupported_claims" in raw:
-                    st.write("Supported claims:")
-                    supported = list(raw.get("supported_claims", []) or [])
-                    if supported:
-                        for item in supported[:4]:
-                            st.write(f"- {item}")
-                    else:
-                        st.write("- None explicitly marked supported")
-                    st.write("Unsupported claims:")
-                    unsupported = list(raw.get("unsupported_claims", []) or [])
-                    if unsupported:
-                        for item in unsupported[:4]:
-                            st.write(f"- {item}")
-                    else:
-                        st.write("- None")
-                    st.write("Missing factors:")
-                    for item in list(raw.get("missing_factors", []) or [])[:4]:
-                        st.write(f"- {item}")
-                    st.write("Rewrite suggestions:")
-                    for item in list(raw.get("rewrite_suggestions", []) or [])[:4]:
-                        st.write(f"- {item}")
-                else:
-                    st.write(f"- Summary: {raw.get('executive_summary', 'No summary returned.')}")
-                    for item in list(raw.get("final_recommendations", []) or [])[:3]:
-                        if isinstance(item, dict):
-                            st.write(f"- {item.get('action', 'No action returned.')}")
-            else:
-                st.write(f"- Failure probability: {float(raw.get('failure_probability', 0.0))*100:.1f}%")
-                st.write(f"- Counterfactual probability: {float(raw.get('counterfactual_probability', 0.0))*100:.1f}%")
-                st.write("Top numeric drivers:")
-                for item in list(raw.get("top_numeric_drivers", []) or [])[:3]:
-                    st.write(f"- {item}")
-                st.write("Narrative alignment flags:")
-                for item in list(raw.get("narrative_alignment_flags", []) or [])[:4]:
-                    st.write(f"- {item}")
+    with st.expander("🔍 Model Breakdown (Groq / watsonx / Local)", expanded=False):
+        for key, label in [("groq", "Groq LLM"), ("watsonx", "IBM watsonx.ai"), ("local", "Local NLP/Analyst")]:
+            row = dict(breakdown.get(key, {}) or {})
+            latency = int(row.get("latency_ms", 0) or 0)
+            errors = row.get("errors") or "None"
+            st.markdown(
+                f"<div class='council-model-badge'>🤖 {label}</div> "
+                f"<span style='color:var(--muted);font-size:0.82rem;'>Latency: {latency}ms | Errors: {errors}</span>",
+                unsafe_allow_html=True,
+            )
 
 
-def _render_council_trace_tab(council_output: Dict[str, Any]) -> None:
-    st.markdown("### Council Trace")
-    st.caption("How the Collaborative Reasoning Council reached the final answer.")
+
+
+def _render_council_trace_tab(council_output: Dict[str, Any], qual: Dict[str, Any] | None = None) -> None:
+    """Show how the Collaborative Reasoning Council formed its conclusions, including NLP input."""
+    import plotly.graph_objects as go
+
+    # ── Pipeline diagram ──────────────────────────────────────────────────
+    nlp_intensity = float((qual or {}).get("distress_intensity", 0.0)) if qual else 0.0
+    nlp_themes = list((qual or {}).get("theme_signals", [])) if qual else []
+    nlp_conf = float((qual or {}).get("confidence", 0.0)) if qual else 0.0
+    nlp_summary = str((qual or {}).get("forensic_summary", "")) if qual else ""
+
     st.markdown(
-        """
-        <div class="flow-grid">
-          <div class="flow-card"><b>1) Groq Draft</b><br/>Produces the first structured reasoning draft from metrics, peers, and evidence.</div>
-          <div class="flow-card"><b>2) watsonx Critique</b><br/>Challenges unsupported claims, flags gaps, and proposes stronger phrasing.</div>
-          <div class="flow-card"><b>3) Local Sanity Check</b><br/>Checks if the narrative actually matches the quantitative risk profile.</div>
-          <div class="flow-card"><b>4) Final Synthesis</b><br/>Consensus answer keeps supported claims, downgrades weak ones, and records disagreements.</div>
+        f"""
+        <div class="flow-grid" style="grid-template-columns:repeat(5,1fr);">
+          <div class="flow-card" style="border-color:rgba(20,184,166,0.4);background:rgba(20,184,166,0.06);">
+            <b style="color:#14b8a6;">① NLP Engine</b><br/>
+            Scans financial text + synth metrics. Intensity: <b style="color:#f1f5f9;">{nlp_intensity:.1f}/10</b><br/>
+            Themes: <em style="color:#6ee7b7;">{', '.join(nlp_themes[:3]) or 'none detected'}</em>
+          </div>
+          <div class="flow-card" style="border-color:rgba(99,102,241,0.4);background:rgba(99,102,241,0.06);">
+            <b style="color:#a5b4fc;">② Groq Draft</b><br/>
+            Generates structured failure narrative from metrics, peers, NLP signals, and Tavily evidence.
+          </div>
+          <div class="flow-card" style="border-color:rgba(139,92,246,0.4);background:rgba(139,92,246,0.06);">
+            <b style="color:#c4b5fd;">③ watsonx Critique</b><br/>
+            Challenges weakly-supported claims and forces citations back to evidence IDs.
+          </div>
+          <div class="flow-card" style="border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.06);">
+            <b style="color:#fcd34d;">④ Local Sanity</b><br/>
+            Checks narrative consistency against quantitative risk score + NLP forensic summary.
+          </div>
+          <div class="flow-card" style="border-color:rgba(16,185,129,0.4);background:rgba(16,185,129,0.06);">
+            <b style="color:#6ee7b7;">⑤ Synthesis</b><br/>
+            Consensus keeps high-conf claims, downgrades weak ones, records disagreements.
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    # ── NLP Contribution Panel ────────────────────────────────────────────
+    if qual and nlp_intensity > 0:
+        theme_scores = dict((qual or {}).get("theme_scores", {}) or {})
+        top_themes = sorted(theme_scores.items(), key=lambda kv: kv[1], reverse=True)[:5]
+        theme_html = "".join(
+            f"<div class='loop-stat'><span class='loop-stat-label'>{_friendly_theme_name(t)}</span>"
+            f"<span class='loop-stat-value' style='color:{'#ef4444' if s > 0.4 else '#f97316' if s > 0.2 else '#94a3b8'};'>"
+            f"{'🔴' if s > 0.4 else '🟠' if s > 0.2 else '⚪'} {s:.2f}</span></div>"
+            for t, s in top_themes
+        )
+        st.markdown(
+            f"<div class='council-card' style='border-color:rgba(20,184,166,0.35);'>"
+            f"<div class='council-model-badge' style='background:rgba(20,184,166,0.15);color:#6ee7b7;border-color:rgba(20,184,166,0.3);'>"
+            f"🔬 NLP Contribution to Council — Intensity {nlp_intensity:.1f}/10 • Confidence {nlp_conf*100:.0f}%</div>"
+            f"<p style='color:#94a3b8;font-size:0.85rem;margin:0.4rem 0;'>{html.escape(nlp_summary)}</p>"
+            f"{theme_html}</div>",
+            unsafe_allow_html=True,
+        )
+
+    # ── Latency chart (Plotly) ────────────────────────────────────────────
     breakdown = dict(council_output.get("model_breakdown", {}) or {})
-    rows = []
-    for key, label in [("groq", "Groq LLM"), ("watsonx", "IBM watsonx.ai"), ("local", "Local NLP/Analyst")]:
+    systems = ["Groq LLM", "IBM watsonx.ai", "Local NLP/Analyst"]
+    latencies = [
+        int((breakdown.get("groq", {}) or {}).get("latency_ms", 0) or 0),
+        int((breakdown.get("watsonx", {}) or {}).get("latency_ms", 0) or 0),
+        int((breakdown.get("local", {}) or {}).get("latency_ms", 0) or 0),
+    ]
+    statuses = [
+        "Error" if (breakdown.get(k, {}) or {}).get("errors") else "OK"
+        for k in ["groq", "watsonx", "local"]
+    ]
+    bar_colors = ["#ef4444" if s == "Error" else "#6366f1" for s in statuses]
+
+    if any(latencies):
+        fig_lat = go.Figure(go.Bar(
+            x=systems, y=latencies, marker=dict(color=bar_colors, line=dict(width=0)),
+            text=[f"{v}ms" for v in latencies], textposition="outside",
+            textfont=dict(color="#f1f5f9", family="Inter"),
+            hovertemplate="<b>%{x}</b><br>Latency: %{y}ms<extra></extra>",
+        ))
+        fig_lat.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94a3b8", family="Inter"),
+            margin=dict(l=0, r=0, t=10, b=0), height=220,
+            xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", title="ms"),
+            title=dict(text="System Latency", font=dict(color="#94a3b8", size=13)),
+        )
+        c_left, c_right = st.columns([2, 1])
+        c_left.plotly_chart(fig_lat, use_container_width=True, config={"displayModeBar": False})
+        with c_right:
+            st.metric("Council Confidence", f"{float(council_output.get('overall_confidence', 0.0))*100:.1f}%")
+            st.metric("Disagreements", f"{len(list(council_output.get('disagreements', []) or []))}")
+            total_ms = sum(latencies)
+            st.metric("Total Pipeline Time", f"{total_ms}ms")
+
+    # ── Per-system readable outputs ───────────────────────────────────────
+    for key, label, accent in [("groq", "Groq LLM Draft", "#6366f1"), ("watsonx", "watsonx Critique", "#8b5cf6"), ("local", "Local Sanity Check", "#14b8a6")]:
         row = dict(breakdown.get(key, {}) or {})
-        rows.append(
-            {
-                "System": label,
-                "LatencyMs": int(row.get("latency_ms", 0) or 0),
-                "Status": "Error" if row.get("errors") else "OK",
-                "HasOutput": "Yes" if row.get("raw") else "No",
-            }
-        )
+        raw = dict(row.get("raw", {}) or {})
+        errors = row.get("errors")
+        with st.expander(f"{label} — {'⚠ Error' if errors else '✓ OK'} ({int(row.get('latency_ms', 0) or 0)}ms)", expanded=False):
+            if errors:
+                st.markdown(f"<div class='council-disagree'>Error: {html.escape(str(errors))}</div>", unsafe_allow_html=True)
+            if raw:
+                # Show readable fields instead of raw JSON
+                for field_key in ["executive_summary", "failure_drivers", "survivor_strategies",
+                                  "narrative_alignment_flags", "failures_confirmed", "critique_notes"]:
+                    val = raw.get(field_key)
+                    if val:
+                        st.markdown(f"**{field_key.replace('_', ' ').title()}**")
+                        if isinstance(val, list):
+                            for item in val[:5]:
+                                if isinstance(item, dict):
+                                    item_text = item.get("driver") or item.get("strategy") or item.get("flag") or str(item)
+                                    st.write(f"- {item_text}")
+                                else:
+                                    st.write(f"- {item}")
+                        else:
+                            st.markdown(f"<div class='explain' style='font-size:0.86rem;'>{html.escape(str(val))}</div>", unsafe_allow_html=True)
 
-    trace_df = pd.DataFrame(rows)
-    if not trace_df.empty:
-        st.altair_chart(
-            alt.Chart(trace_df)
-            .mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
-            .encode(
-                x=alt.X("System:N", title=None),
-                y=alt.Y("LatencyMs:Q", title="Latency (ms)"),
-                color=alt.Color("Status:N", scale=alt.Scale(range=["#10b981", "#e63946"])),
-                tooltip=["System", "LatencyMs", "Status", "HasOutput"],
-            )
-            .properties(height=240)
-            .configure_view(strokeOpacity=0)
-            .configure_axis(labelColor="#0f172a", titleColor="#0f172a", gridColor="#cbd5e1")
-            .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
-            .configure(background="#ffffff"),
-            use_container_width=True,
-        )
-
-    c1, c2 = st.columns(2)
-    with c1:
-        st.metric("Council Confidence", f"{float(council_output.get('overall_confidence', 0.0))*100:.1f}%")
-    with c2:
-        st.metric("Recorded Disagreements", f"{len(list(council_output.get('disagreements', []) or []))}")
-
-    groq_raw = dict((breakdown.get("groq", {}) or {}).get("raw", {}) or {})
-    watsonx_raw = dict((breakdown.get("watsonx", {}) or {}).get("raw", {}) or {})
-    local_raw = dict((breakdown.get("local", {}) or {}).get("raw", {}) or {})
-
-    exp1, exp2, exp3 = st.columns(3)
-    with exp1:
-        with st.expander("Groq Draft", expanded=True):
-            st.write("Groq creates the first structured story from the evidence and peer/counterfactual context.")
-            if breakdown.get("groq", {}).get("errors"):
-                st.error(str(breakdown.get("groq", {}).get("errors")))
-            st.write(f"Executive summary: {groq_raw.get('executive_summary', 'No summary returned.')}")
-            st.write("Failure drivers Groq identified:")
-            for item in list(groq_raw.get("failure_drivers", []) or [])[:4]:
-                if isinstance(item, dict):
-                    citations = ", ".join(f"[{eid}]" for eid in list(item.get("evidence_ids", []) or [])) or "Evidence unavailable"
-                    st.write(f"- {item.get('driver', 'No driver returned.')} | {citations}")
-                else:
-                    st.write(f"- {item}")
-            st.write("Strategies Groq proposed:")
-            for item in list(groq_raw.get("survivor_strategies", []) or [])[:4]:
-                if isinstance(item, dict):
-                    citations = ", ".join(f"[{eid}]" for eid in list(item.get("evidence_ids", []) or [])) or "Evidence unavailable"
-                    st.write(f"- {item.get('strategy', 'No strategy returned.')} | {citations}")
-                else:
-                    st.write(f"- {item}")
-    with exp2:
-        with st.expander("watsonx Critique", expanded=True):
-            st.write("watsonx acts as reviewer and challenges unsupported or weakly-supported claims.")
-            if breakdown.get("watsonx", {}).get("errors"):
-                st.error(str(breakdown.get("watsonx", {}).get("errors")))
-            st.write("Supported claims:")
-            supported = list(watsonx_raw.get("supported_claims", []) or [])
-            if supported:
-                for item in supported[:5]:
-                    st.write(f"- {item}")
-            else:
-                st.write("- None explicitly listed")
-            st.write("Unsupported claims:")
-            unsupported = list(watsonx_raw.get("unsupported_claims", []) or [])
-            if unsupported:
-                for item in unsupported[:5]:
-                    st.write(f"- {item}")
-            else:
-                st.write("- None")
-            st.write("Missing factors:")
-            for item in list(watsonx_raw.get("missing_factors", []) or [])[:5]:
-                st.write(f"- {item}")
-            st.write("Rewrite suggestions:")
-            for item in list(watsonx_raw.get("rewrite_suggestions", []) or [])[:5]:
-                st.write(f"- {item}")
-    with exp3:
-        with st.expander("Local Sanity Check", expanded=True):
-            st.write("The local model checks whether the narrative is numerically consistent with the risk profile.")
-            if breakdown.get("local", {}).get("errors"):
-                st.error(str(breakdown.get("local", {}).get("errors")))
-            st.write(f"- Failure probability: {float(local_raw.get('failure_probability', 0.0))*100:.1f}%")
-            st.write(f"- Counterfactual probability: {float(local_raw.get('counterfactual_probability', 0.0))*100:.1f}%")
-            st.write("Top numeric drivers:")
-            for item in list(local_raw.get("top_numeric_drivers", []) or [])[:4]:
-                st.write(f"- {item}")
-            st.write("Narrative alignment flags:")
-            for item in list(local_raw.get("narrative_alignment_flags", []) or [])[:5]:
-                st.write(f"- {item}")
-
-    if local_raw:
-        flags = list(local_raw.get("narrative_alignment_flags", []) or [])
-        if flags:
-            st.markdown("#### Local Alignment Flags")
-            for flag in flags[:5]:
-                st.write(f"- {flag}")
-
+    # ── Disagreement table ────────────────────────────────────────────────
     disagreements = list(council_output.get("disagreements", []) or [])
     if disagreements:
-        st.markdown("#### Where The Systems Disagreed")
-        diff_rows = []
-        for row in disagreements[:8]:
-            diff_rows.append(
-                {
-                    "Topic": row.get("topic", ""),
-                    "Groq": row.get("groq_view", ""),
-                    "watsonx": row.get("watsonx_view", ""),
-                    "Local": row.get("local_view", ""),
-                }
-            )
+        st.markdown("#### 🔀 Where Systems Disagreed")
+        diff_rows = [
+            {"Topic": r.get("topic", ""), "Groq": r.get("groq_view", ""), "watsonx": r.get("watsonx_view", ""), "Local": r.get("local_view", "")}
+            for r in disagreements[:8]
+        ]
         st.dataframe(pd.DataFrame(diff_rows), use_container_width=True)
+
+
+
 
 
 def _inject_assistant_panel_mode_style(compact: bool) -> None:
     if compact:
         st.markdown(
             """
-            <style>
+            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
             .st-key-jarvis_panel {
                 width: min(340px, 90vw) !important;
                 max-height: min(56vh, 460px) !important;
@@ -689,7 +561,9 @@ def _inject_assistant_panel_mode_style(compact: bool) -> None:
 
     st.markdown(
         """
-        <style>
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
         .st-key-jarvis_panel {
             width: min(470px, 95vw) !important;
             max-height: min(74vh, 720px) !important;
@@ -723,6 +597,100 @@ def _test_llm_connection(reasoning_client: object, provider_name: str) -> Tuple[
         max_tokens=24,
     )
     return True, f"Connected. Model: {response.get('model_used', 'unknown')}"
+
+
+def _enabled_provider_chain(
+    *,
+    provider_choice: str,
+    groq_client: GroqReasoningClient,
+    watsonx_client: Optional[WatsonxReasoningClient],
+) -> List[Tuple[str, object]]:
+    ordered: List[Tuple[str, object]] = []
+    if provider_choice == "IBM watsonx.ai":
+        ordered.append(("IBM watsonx.ai", watsonx_client))
+        ordered.append(("Groq", groq_client))
+    else:
+        ordered.append(("Groq", groq_client))
+        ordered.append(("IBM watsonx.ai", watsonx_client))
+
+    chain: List[Tuple[str, object]] = []
+    for name, client in ordered:
+        if client is None:
+            continue
+        if name == "Groq" and not bool(getattr(client, "enabled", False)):
+            continue
+        chain.append((name, client))
+    return chain
+
+
+def _invoke_with_provider_failover(
+    *,
+    provider_chain: List[Tuple[str, object]],
+    method_name: str,
+    payload: Dict[str, Any],
+    validator: Any,
+) -> Tuple[Optional[Dict[str, Any]], List[str], str]:
+    errors: List[str] = []
+    primary_name = provider_chain[0][0] if provider_chain else "None"
+    for provider_name, client in provider_chain:
+        fn = getattr(client, method_name, None)
+        if not callable(fn):
+            errors.append(f"{provider_name}: method `{method_name}` not available.")
+            continue
+        try:
+            result = fn(**payload)
+        except Exception as exc:
+            errors.append(f"{provider_name}: {type(exc).__name__}: {exc}")
+            continue
+        if isinstance(result, dict) and bool(validator(result)):
+            out = dict(result)
+            out.setdefault("provider_used", provider_name)
+            if provider_name != primary_name and errors:
+                out["provider_failover"] = f"Primary provider unavailable. Used {provider_name}."
+                out["provider_errors"] = errors[:3]
+            return out, errors, provider_name
+        errors.append(f"{provider_name}: invalid response payload.")
+    return None, errors, primary_name
+
+
+def _fallback_failure_status(errors: List[str]) -> Dict[str, Any]:
+    note = " / ".join(errors[:2]) if errors else "No provider response."
+    return {
+        "is_failed": False,
+        "status_label": "unclear",
+        "confidence": 0.5,
+        "reason": f"Provider fallback triggered. {note}",
+        "evidence": [],
+        "model_used": "fallback",
+        "provider_used": "fallback",
+    }
+
+
+def _fallback_reasoning(recommendations: List[str], errors: List[str]) -> Dict[str, Any]:
+    note = " / ".join(errors[:2]) if errors else "No provider response."
+    return {
+        "plain_english_explainer": "The model providers were unavailable, so this summary uses deterministic fallback logic.",
+        "executive_summary": f"Provider fallback triggered. {note}",
+        "failure_drivers": ["Provider calls failed; relying on metric-driven fallback summary."],
+        "survivor_differences": ["Survivors generally maintain stronger liquidity and lower leverage."],
+        "prevention_measures": recommendations[:3] or ["Stabilize liquidity and reduce leverage."],
+        "technical_notes": [f"Provider errors: {note}"],
+        "model_used": "fallback",
+        "provider_used": "fallback",
+    }
+
+
+def _fallback_answer(errors: List[str]) -> Dict[str, Any]:
+    note = " / ".join(errors[:2]) if errors else "No provider response."
+    return {
+        "answer": "I could not generate a model-backed answer right now.",
+        "rationale": f"Provider fallback triggered. {note}",
+        "caveat": "Please retry after checking provider connectivity.",
+        "confidence": "low",
+        "provider_used": "fallback",
+    }
+
+
 def _fmt_num(value: object) -> str:
     if value is None:
         return "N/A"
@@ -791,6 +759,11 @@ def _metrics_table(metrics: Dict[str, object], hide_missing: bool = False) -> pd
 def _core_metric_quality(metrics: Dict[str, Optional[float]]) -> int:
     keys = ["debt_to_equity", "current_ratio", "cash_burn", "revenue_growth", "revenue"]
     return sum(1 for k in keys if metrics.get(k) is not None)
+
+
+def _looks_distressed_symbol(ticker: str) -> bool:
+    t = str(ticker or "").upper().strip()
+    return bool(t) and (t.endswith("Q") or t.endswith(".PK"))
 
 
 def _impute_failed_defaults(metrics: Dict[str, Optional[float]]) -> Tuple[Dict[str, Optional[float]], bool]:
@@ -952,9 +925,18 @@ def _collect_peer_metrics(peer_tickers: List[str], macro_stress_score: float) ->
     for ticker in peer_tickers:
         info = fetch_company_info(ticker)
         metrics = compute_metrics(fetch_financials(ticker), company_info=info)
+        core_quality = _core_metric_quality(metrics)
         metrics, estimated = _impute_survivor_defaults(metrics, ticker)
         score, _ = MultiFactorRiskEngine(metrics, macro_stress_score).compute_score()
-        rows.append({"ticker": ticker, "metrics": metrics, "risk_score": score, "estimated": estimated})
+        rows.append(
+            {
+                "ticker": ticker,
+                "metrics": metrics,
+                "risk_score": score,
+                "estimated": estimated,
+                "core_quality": core_quality,
+            }
+        )
     return rows
 
 
@@ -992,25 +974,25 @@ def _chart_metric_gaps(metric_gaps: Dict[str, object]) -> alt.Chart:
                 "Metric:N",
                 sort=None,
                 title=None,
-                axis=alt.Axis(labelAngle=-18, labelColor="#0f172a", labelLimit=180, labelPadding=8),
+                axis=alt.Axis(labelAngle=-18, labelColor="#94a3b8", labelLimit=180, labelPadding=8),
             ),
             y=alt.Y("Scaled Gap:Q", title="Relative Gap (scaled for readability)"),
-            color=alt.condition(alt.datum["Scaled Gap"] >= 0, alt.value("#fb8500"), alt.value("#0ea5a6")),
+            color=alt.condition(alt.datum["Scaled Gap"] >= 0, alt.value("#f97316"), alt.value("#14b8a6")),
             tooltip=["Metric", alt.Tooltip("Raw Gap:Q", format=",.3f"), alt.Tooltip("Scaled Gap:Q", format=",.3f")],
         )
         .properties(height=260)
         .configure_view(strokeOpacity=0)
         .configure_axis(
-            labelColor="#0f172a",
-            titleColor="#0f172a",
+            labelColor="#94a3b8",
+            titleColor="#94a3b8",
             labelFontSize=13,
             titleFontSize=13,
-            gridColor="#cbd5e1",
+            gridColor="rgba(255,255,255,0.08)",
         )
-        .configure_axisX(labelAngle=-18, labelColor="#0f172a", titleColor="#0f172a", labelPadding=8)
-        .configure_axisY(labelColor="#0f172a", titleColor="#0f172a")
-        .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
-        .configure(background="#ffffff")
+        .configure_axisX(labelAngle=-18, labelColor="#94a3b8", titleColor="#94a3b8", labelPadding=8)
+        .configure_axisY(labelColor="#94a3b8", titleColor="#94a3b8")
+        .configure_legend(labelColor="#94a3b8", titleColor="#94a3b8")
+        .configure(background="rgba(0,0,0,0)")
     )
 
 
@@ -1045,104 +1027,86 @@ def _chart_layer_stress_heatmap(
             x=alt.X("Layer:N", title=None, sort=["Macro", "Business", "Financial", "Operational", "Qualitative"]),
             color=alt.Color(
                 "Stress Score:Q",
-                scale=alt.Scale(range=["#d7eef6", "#8fc6d6", "#377ea3", "#e63946"]),
+                scale=alt.Scale(range=["#d7eef6", "#8fc6d6", "#377ea3", "#ef4444"]),
                 title="Stress Intensity",
             ),
             tooltip=["Layer", alt.Tooltip("Stress Score:Q", format=".2f"), "Signals"],
         )
         .properties(height=90)
         .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#0f172a", titleColor="#0f172a", labelFontSize=12, titleFontSize=12)
-        .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
-        .configure(background="#ffffff")
+        .configure_axis(labelColor="#94a3b8", titleColor="#94a3b8", labelFontSize=12, titleFontSize=12)
+        .configure_legend(labelColor="#94a3b8", titleColor="#94a3b8")
+        .configure(background="rgba(0,0,0,0)")
     )
 
 
-def _chart_risk_contribution(failing_components: Dict[str, float]) -> alt.Chart:
-    weights = {
-        "debt_risk": 24.0,
-        "liquidity_risk": 22.0,
-        "revenue_risk": 20.0,
-        "burn_risk": 20.0,
-        "macro_risk": 14.0,
-    }
-    labels = {
-        "debt_risk": "Debt",
-        "liquidity_risk": "Liquidity",
-        "revenue_risk": "Revenue",
-        "burn_risk": "Cash Burn",
-        "macro_risk": "Macro",
-    }
-
-    rows = []
-    for key in ["debt_risk", "liquidity_risk", "revenue_risk", "burn_risk", "macro_risk"]:
-        val = float(failing_components.get(key, 0.0))
-        weighted_points = val * float(weights[key])
-        rows.append(
-            {
-                "Driver": labels[key],
-                "Risk Points": round(weighted_points, 3),
-                "Raw Component": round(val, 3),
-            }
-        )
-    df = pd.DataFrame(rows)
-    return (
-        alt.Chart(df)
-        .mark_bar(cornerRadiusTopLeft=7, cornerRadiusTopRight=7)
-        .encode(
-            x=alt.X("Driver:N", title=None, sort=None),
-            y=alt.Y("Risk Points:Q", title="Contribution to Total Risk (points out of 100)"),
-            color=alt.Color(
-                "Driver:N",
-                scale=alt.Scale(range=["#1d3557", "#0ea5a6", "#457b9d", "#fb8500", "#e63946"]),
-                legend=None,
-            ),
-            tooltip=["Driver", alt.Tooltip("Risk Points:Q", format=".2f"), alt.Tooltip("Raw Component:Q", format=".3f")],
-        )
-        .properties(height=240)
-        .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#0f172a", titleColor="#0f172a", labelFontSize=12, titleFontSize=12, gridColor="#cbd5e1")
-        .configure(background="#ffffff")
+def _chart_risk_contribution(components: Dict[str, float]) -> go.Figure:
+    """Interactive Plotly horizontal bar for risk contribution."""
+    import plotly.graph_objects as go
+    import plotly.express as px
+    if not components:
+        fig = go.Figure()
+        fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", height=180)
+        return fig
+    items = sorted(components.items(), key=lambda kv: kv[1], reverse=True)
+    labels = [k.replace("_", " ").title() for k, _ in items]
+    values = [float(v) for _, v in items]
+    total = sum(values) or 1
+    pcts = [v / total * 100 for v in values]
+    colors = ["#ef4444" if v > 0.3 else "#f97316" if v > 0.15 else "#6366f1" for v in values]
+    fig = go.Figure(go.Bar(
+        x=values, y=labels, orientation="h",
+        marker=dict(color=colors, line=dict(width=0)),
+        text=[f"{p:.1f}%" for p in pcts], textposition="outside",
+        textfont=dict(color="#f1f5f9", size=11, family="Inter"),
+        hovertemplate="<b>%{y}</b><br>Score: %{x:.3f}<br>% of total: <br><extra></extra>",
+    ))
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#94a3b8", family="Inter"),
+        margin=dict(l=0, r=50, t=30, b=0), height=max(200, len(labels)*40),
+        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#94a3b8"),
+        yaxis=dict(showgrid=False, color="#94a3b8"),
+        title=dict(text="Risk Contribution Decomposition", font=dict(color="#e2e8f0", size=13)),
     )
+    return fig
 
 
-def _chart_nlp_theme_scores(qual: Dict[str, object]) -> alt.Chart:
+def _chart_nlp_theme_scores(qual: Dict[str, object]) -> go.Figure:
+    """Interactive Plotly NLP theme severity chart."""
+    import plotly.graph_objects as go
+    import plotly.express as px
     theme_scores = dict(qual.get("theme_scores", {}) or {})
     theme_counts = dict(qual.get("themes", {}) or {})
-    rows = []
-    for theme, score in theme_scores.items():
-        rows.append(
-            {
-                "Theme": _friendly_theme_name(theme),
-                "Score": float(score),
-                "Mentions": int(theme_counts.get(theme, 0) or 0),
-            }
-        )
-    if not rows:
-        rows = [{"Theme": "No Theme Signals", "Score": 0.0, "Mentions": 0}]
-    df = pd.DataFrame(rows)
-    return (
-        alt.Chart(df)
-        .mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
-        .encode(
-            x=alt.X("Theme:N", sort="-y", title=None),
-            y=alt.Y("Score:Q", title="Theme Severity Score (0-1)"),
-            color=alt.condition(alt.datum.Score >= 0.45, alt.value("#e63946"), alt.value("#1d8a9e")),
-            tooltip=["Theme", alt.Tooltip("Score:Q", format=".3f"), "Mentions"],
-        )
-        .properties(height=240)
-        .configure_view(strokeOpacity=0)
-        .configure_axis(
-            labelColor="#0f172a",
-            titleColor="#0f172a",
-            labelFontSize=12,
-            titleFontSize=12,
-            gridColor="#cbd5e1",
-        )
-        .configure_axisX(labelAngle=-18, labelColor="#0f172a", titleColor="#0f172a")
-        .configure_axisY(labelColor="#0f172a", titleColor="#0f172a")
-        .configure(background="#ffffff")
+    if not theme_scores:
+        fig = go.Figure()
+        fig.add_annotation(text="No NLP theme signals detected", xref="paper", yref="paper",
+                           x=0.5, y=0.5, showarrow=False, font=dict(color="#94a3b8", size=14))
+        fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", height=180)
+        return fig
+    items = sorted(theme_scores.items(), key=lambda kv: kv[1], reverse=True)
+    themes = [_friendly_theme_name(t) for t, _ in items]
+    scores = [float(s) for _, s in items]
+    mentions = [int(theme_counts.get(t, 0) or 0) for t, _ in items]
+    colors = ["#ef4444" if s >= 0.45 else "#f97316" if s >= 0.25 else "#6366f1" for s in scores]
+    fig = go.Figure(go.Bar(
+        x=themes, y=scores,
+        marker=dict(color=colors, line=dict(width=0)),
+        text=[f"{s:.2f}" for s in scores], textposition="outside",
+        textfont=dict(color="#f1f5f9", size=12, family="Inter"),
+        customdata=mentions,
+        hovertemplate="<b>%{x}</b><br>Score: %{y:.3f}<br>Mentions: %{customdata}<extra></extra>",
+    ))
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#94a3b8", family="Inter"),
+        margin=dict(l=0, r=0, t=30, b=0), height=280,
+        xaxis=dict(showgrid=False, tickangle=-20, color="#94a3b8"),
+        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#94a3b8",
+                   title="Severity Score (0-1)", range=[0, min(1.1, max(scores)*1.3) if scores else 1]),
+        title=dict(text="NLP Distress Theme Scores", font=dict(color="#e2e8f0", size=14)),
     )
+    return fig
 
 
 def _chart_before_after(original: float, adjusted: float) -> alt.Chart:
@@ -1158,83 +1122,82 @@ def _chart_before_after(original: float, adjusted: float) -> alt.Chart:
         .encode(
             x=alt.X("Scenario:N", title=None, sort=["Original", "Counterfactual"]),
             y=alt.Y("Risk:Q", title="Risk Score"),
-            color=alt.Color("Scenario:N", scale=alt.Scale(range=["#e63946", "#0ea5a6"]), legend=None),
+            color=alt.Color("Scenario:N", scale=alt.Scale(range=["#ef4444", "#14b8a6"]), legend=None),
             tooltip=["Scenario", "Risk"],
         )
         .properties(height=220)
         .configure_view(strokeOpacity=0)
         .configure_axis(
-            labelColor="#0f172a",
-            titleColor="#0f172a",
+            labelColor="#94a3b8",
+            titleColor="#94a3b8",
             labelFontSize=13,
             titleFontSize=13,
-            gridColor="#cbd5e1",
+            gridColor="rgba(255,255,255,0.08)",
         )
-        .configure_axisX(labelAngle=0, labelColor="#0f172a", titleColor="#0f172a")
-        .configure_axisY(labelColor="#0f172a", titleColor="#0f172a")
-        .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
-        .configure(background="#ffffff")
+        .configure_axisX(labelAngle=0, labelColor="#94a3b8", titleColor="#94a3b8")
+        .configure_axisY(labelColor="#94a3b8", titleColor="#94a3b8")
+        .configure_legend(labelColor="#94a3b8", titleColor="#94a3b8")
+        .configure(background="rgba(0,0,0,0)")
     )
 
 
-def _chart_risk_components(components: Dict[str, float]) -> alt.Chart:
-    df = pd.DataFrame(
-        [{"Component": k.replace("_", " ").title(), "Value": float(v)} for k, v in components.items()]
+def _chart_risk_components(components: Dict[str, float]) -> go.Figure:
+    """Interactive Plotly donut for risk component mix."""
+    import plotly.graph_objects as go
+    import plotly.express as px
+    if not components:
+        fig = go.Figure()
+        fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", height=200)
+        return fig
+    labels = [k.replace("_", " ").title() for k in components]
+    values = [abs(float(v)) for v in components.values()]
+    colors = ["#6366f1", "#14b8a6", "#f97316", "#7dd3fc", "#a78bfa", "#ef4444", "#10b981"]
+    fig = go.Figure(go.Pie(
+        labels=labels, values=values, hole=0.5,
+        marker=dict(colors=colors[:len(labels)], line=dict(color="#080d1a", width=2)),
+        textinfo="label+percent",
+        textfont=dict(color="#e2e8f0", size=11, family="Inter"),
+        hovertemplate="<b>%{label}</b><br>Score: %{value:.3f}<br>%{percent}<extra></extra>",
+    ))
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#94a3b8", family="Inter"),
+        margin=dict(l=0, r=0, t=10, b=0), height=260,
+        legend=dict(font=dict(color="#94a3b8"), bgcolor="rgba(0,0,0,0)"),
+        title=dict(text="Risk Component Mix", font=dict(color="#e2e8f0", size=13)),
     )
-    return (
-        alt.Chart(df)
-        .mark_arc(innerRadius=45)
-        .encode(
-            theta=alt.Theta(field="Value", type="quantitative"),
-            color=alt.Color(
-                field="Component",
-                type="nominal",
-                scale=alt.Scale(range=["#1d3557", "#0ea5a6", "#fb8500", "#8ecae6", "#457b9d"]),
-                legend=alt.Legend(orient="right"),
-            ),
-            tooltip=["Component", "Value"],
-        )
-        .properties(height=280)
-        .configure_view(strokeOpacity=0)
-        .configure_title(color="#0f172a", fontSize=13)
-        .configure_legend(
-            labelColor="#0f172a",
-            titleColor="#0f172a",
-            labelFontSize=13,
-            titleFontSize=13,
-            symbolType="circle",
-        )
-        .configure(background="#ffffff")
-    )
+    return fig
 
 
-def _chart_component_delta(failing_components: Dict[str, float], survivor_components: Dict[str, float]) -> alt.Chart:
-    rows = []
-    for key, fail_val in failing_components.items():
-        surv_val = float(survivor_components.get(key, 0.0))
-        rows.append(
-            {
-                "Component": key.replace("_", " ").title(),
-                "Delta": float(fail_val) - surv_val,
-                "Failing": float(fail_val),
-                "Survivor": surv_val,
-            }
-        )
-    df = pd.DataFrame(rows)
-    return (
-        alt.Chart(df)
-        .mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6)
-        .encode(
-            x=alt.X("Component:N", title=None, sort=None),
-            y=alt.Y("Delta:Q", title="Risk Delta (Failing - Survivor)"),
-            color=alt.condition(alt.datum.Delta >= 0, alt.value("#e63946"), alt.value("#10b981")),
-            tooltip=["Component", alt.Tooltip("Failing:Q", format=".3f"), alt.Tooltip("Survivor:Q", format=".3f"), "Delta"],
-        )
-        .properties(height=230)
-        .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#0f172a", titleColor="#0f172a", labelFontSize=12, titleFontSize=12, gridColor="#cbd5e1")
-        .configure(background="#ffffff")
+def _chart_component_delta(failing_components: Dict[str, float], survivor_components: Dict[str, float]) -> go.Figure:
+    """Interactive Plotly grouped bar for component delta vs survivors."""
+    import plotly.graph_objects as go
+    import plotly.express as px
+    all_keys = sorted(set(list(failing_components.keys()) + list(survivor_components.keys())))
+    if not all_keys:
+        fig = go.Figure()
+        fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", height=200)
+        return fig
+    labels = [k.replace("_", " ").title() for k in all_keys]
+    fail_vals = [float(failing_components.get(k, 0)) for k in all_keys]
+    surv_vals = [float(survivor_components.get(k, 0)) for k in all_keys]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(name="Failed Company", x=labels, y=fail_vals,
+                         marker=dict(color="#ef4444", line=dict(width=0)),
+                         hovertemplate="<b>%{x}</b><br>Failed: %{y:.3f}<extra></extra>"))
+    fig.add_trace(go.Bar(name="Survivor Avg", x=labels, y=surv_vals,
+                         marker=dict(color="#10b981", line=dict(width=0)),
+                         hovertemplate="<b>%{x}</b><br>Survivor: %{y:.3f}<extra></extra>"))
+    fig.update_layout(
+        barmode="group", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#94a3b8", family="Inter"),
+        margin=dict(l=0, r=0, t=30, b=0), height=280,
+        xaxis=dict(showgrid=False, tickangle=-18, color="#94a3b8"),
+        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#94a3b8", title="Component Score"),
+        legend=dict(font=dict(color="#94a3b8"), bgcolor="rgba(0,0,0,0)"),
+        title=dict(text="Component Delta vs Survivor Cohort", font=dict(color="#e2e8f0", size=13)),
     )
+    return fig
 
 
 def _chart_peer_positioning(
@@ -1272,15 +1235,15 @@ def _chart_peer_positioning(
         .encode(
             x=alt.X("Current Ratio:Q", title="Current Ratio (higher is better)"),
             y=alt.Y("Debt/Equity:Q", title="Debt/Equity (lower is better)"),
-            color=alt.Color("Group:N", scale=alt.Scale(range=["#e63946", "#0ea5a6"])),
+            color=alt.Color("Group:N", scale=alt.Scale(range=["#ef4444", "#14b8a6"])),
             size=alt.Size("Risk Score:Q", scale=alt.Scale(range=[80, 520])),
             tooltip=["Ticker", "Group", alt.Tooltip("Current Ratio:Q", format=".2f"), alt.Tooltip("Debt/Equity:Q", format=".2f"), "Risk Score"],
         )
         .properties(height=280)
         .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#0f172a", titleColor="#0f172a", labelFontSize=12, titleFontSize=12, gridColor="#cbd5e1")
-        .configure_legend(labelColor="#0f172a", titleColor="#0f172a")
-        .configure(background="#ffffff")
+        .configure_axis(labelColor="#94a3b8", titleColor="#94a3b8", labelFontSize=12, titleFontSize=12, gridColor="rgba(255,255,255,0.08)")
+        .configure_legend(labelColor="#94a3b8", titleColor="#94a3b8")
+        .configure(background="rgba(0,0,0,0)")
     )
 
 
@@ -1371,7 +1334,10 @@ def _render_workflow_trace(
     with st.expander("3) Failure Verification Gate", expanded=False):
         st.write(f"- Classified as failed/distressed: **{failed}**")
         st.write(f"- Confidence: **{float(failure_status.get('confidence', 0.0))*100:.1f}%**")
-        st.write(f"- Model: `{failure_status.get('model_used', 'fallback')}`")
+        st.write(
+            f"- Provider / Model: `{failure_status.get('provider_used', 'fallback')}` / "
+            f"`{failure_status.get('model_used', 'fallback')}`"
+        )
         st.write(f"- Rationale: {str(failure_status.get('reason', ''))}")
 
     with st.expander("4) Peer + Survivor Benchmarking", expanded=False):
@@ -1414,18 +1380,14 @@ def _clean_reasoning_line(text: str, max_len: int = 180) -> str:
 
 
 def _chat_bubble(text: str, role: str) -> str:
-    safe = html.escape(text or "")
+    # Allow typing animation HTML to pass unescaped
+    if "<div class='typing-dots'>" in (text or ""):
+        safe = text
+    else:
+        safe = html.escape(text or "").replace("\n", "<br/>")
     if role == "assistant":
-        return (
-            "<div style='background:#1f2937;border:1px solid #334155;border-radius:14px;"
-            "padding:.62rem .72rem;color:#e2e8f0;font-size:.95rem;line-height:1.45;'>"
-            f"{safe}</div>"
-        )
-    return (
-        "<div style='background:#0b5d66;border:1px solid #14b8a6;border-radius:14px;padding:.55rem .65rem;"
-        "color:#ecfeff;font-size:.92rem;line-height:1.42;text-align:right;'>"
-        f"{safe}</div>"
-    )
+        return f"<div class='chat-bubble-ai'>🤖 {safe}</div>"
+    return f"<div class='chat-bubble-user'>{safe}</div>"
 
 def _strengthen_reasoning(
     reasoning: Dict[str, object],
@@ -1786,8 +1748,6 @@ def main() -> None:
         st.session_state["assistant_waiting"] = False
     if "assistant_compact" not in st.session_state:
         st.session_state["assistant_compact"] = False
-    if "jarvis_q" not in st.session_state:
-        st.session_state["jarvis_q"] = ""
     if "analysis_cache" not in st.session_state:
         st.session_state["analysis_cache"] = None
     if "llm_test_result" not in st.session_state:
@@ -1802,8 +1762,8 @@ def main() -> None:
 
     with st.sidebar:
         st.markdown("### Settings")
-        reasoning_mode = st.selectbox("Reasoning Mode", ["Single Provider", "Collaborative Council (recommended)"], index=0)
-        provider_choice = st.selectbox("LLM Provider", ["Groq", "IBM watsonx.ai"], index=0)
+        reasoning_mode = st.selectbox("Reasoning Mode", ["Collaborative Council (recommended)", "Single Provider"], index=0)
+        provider_choice = st.selectbox("LLM Provider", ["IBM watsonx.ai", "Groq"], index=0)
 
     missing_watsonx = [
         name
@@ -1823,23 +1783,31 @@ def main() -> None:
         model=watsonx_model,
     )
 
-    active_provider_name = provider_choice
-    if provider_choice == "IBM watsonx.ai":
-        if missing_watsonx:
-            st.warning(
-                "IBM watsonx.ai is missing required configuration: "
-                + ", ".join(missing_watsonx)
-                + ". Falling back to Groq."
-            )
-            reasoning_client = groq_client
-            active_provider_name = "Groq"
-            active_model_name = reasoning_client.models[0] if reasoning_client.models else "unknown"
-        else:
-            reasoning_client = watsonx_client
-            active_model_name = watsonx_model
+    single_provider_chain = _enabled_provider_chain(
+        provider_choice=provider_choice,
+        groq_client=groq_client,
+        watsonx_client=watsonx_client,
+    )
+    if not single_provider_chain:
+        st.error("No LLM provider is configured. Add Groq or watsonx credentials in `.env`.")
+        return
+
+    if provider_choice == "IBM watsonx.ai" and missing_watsonx:
+        st.warning(
+            "IBM watsonx.ai is missing required configuration: "
+            + ", ".join(missing_watsonx)
+            + ". Single-provider requests will fail over automatically."
+        )
+    if provider_choice == "Groq" and not groq_client.enabled:
+        st.warning("Groq key is missing. Single-provider requests will fail over to watsonx.ai when available.")
+
+    primary_provider_name, primary_provider_client = single_provider_chain[0]
+    reasoning_client = primary_provider_client
+    active_provider_name = primary_provider_name
+    if primary_provider_name == "IBM watsonx.ai":
+        active_model_name = watsonx_model or "unknown"
     else:
-        reasoning_client = groq_client
-        active_model_name = reasoning_client.models[0] if reasoning_client.models else "unknown"
+        active_model_name = groq_client.models[0] if groq_client.models else "unknown"
 
     if reasoning_mode == "Collaborative Council (recommended)":
         if watsonx_client is None:
@@ -1875,7 +1843,7 @@ def main() -> None:
         st.write("Enter a company full name or ticker symbol.")
         company_input = st.text_input("Company Name or Ticker", value="", placeholder="Example: Lehman Brothers or LEHMQ")
 
-        with st.expander("Advanced Controls", expanded=False):
+        with st.expander("⚙ Advanced Controls", expanded=False):
             col_a, col_b = st.columns(2)
             with col_a:
                 max_auto_peers = st.slider("Peer candidate count", 4, 10, 6)
@@ -1954,25 +1922,26 @@ def main() -> None:
             info = fetch_company_info(profile.ticker)
             intelligence = _fetch_tavily_intelligence(tavily, profile.name, profile.ticker, profile.industry)
 
-            failure_status = reasoning_client.verify_failure_status(
-                company_input=company_input,
-                resolved_name=profile.name,
-                ticker=profile.ticker,
-                tavily_answer=str(intelligence["failure_check"]["answer"]),
-                tavily_snippets=list(intelligence["failure_check"]["snippets"]),
+            failure_status, verify_errors, _ = _invoke_with_provider_failover(
+                provider_chain=single_provider_chain,
+                method_name="verify_failure_status",
+                payload={
+                    "company_input": company_input,
+                    "resolved_name": profile.name,
+                    "ticker": profile.ticker,
+                    "tavily_answer": str(intelligence["failure_check"]["answer"]),
+                    "tavily_snippets": list(intelligence["failure_check"]["snippets"]),
+                },
+                validator=lambda row: "is_failed" in row,
             )
+            if failure_status is None:
+                failure_status = _fallback_failure_status(verify_errors)
 
         failed = bool(failure_status.get("is_failed", False))
-        if not failed:
-            st.markdown("### Verification")
-            v1, v2, v3 = st.columns([1.6, 1, 1])
-            v1.write(f"Resolved: **{profile.name} ({profile.ticker})**")
-            v2.metric("Failure Confidence", f"{float(failure_status.get('confidence', 0.0))*100:.1f}%")
-            v3.write(f"Model: `{failure_status.get('model_used', 'fallback')}`")
-            st.markdown('<span class="badge badge-ok">Likely Not Failed</span>', unsafe_allow_html=True)
-            st.warning("This case does not appear to be failed/distressed. Enter a failed company to generate a full forensic report.")
-            st.session_state["analysis_active"] = False
-            return
+        # NOTE: we do NOT block the analysis when is_failed=False.
+        # Companies like "Apple in 1990" or high-risk companies that haven't
+        # formally failed yet still need forensic analysis. We show a warning
+        # banner but always continue to the full report.
 
         progress = st.progress(0, text="Collecting financial and peer data...")
         failing_metrics = compute_metrics(fetch_financials(profile.ticker), company_info=info)
@@ -1981,7 +1950,7 @@ def main() -> None:
         else:
             used_failed_imputation = False
 
-        qual = qualitative_summary("", intelligence["qual_snippets"])
+        qual = qualitative_summary("", intelligence["qual_snippets"], metrics=failing_metrics)
         raw_qual_intensity = float(qual.get("distress_intensity", sum(qual["themes"].values())))
         qualitative_intensity = max(0.0, min(6.0, raw_qual_intensity * 0.62))
         macro_stress_score = float(intelligence["macro_stress_score"])
@@ -2002,22 +1971,31 @@ def main() -> None:
             meta = peer_meta.get(str(row.get("ticker")), {})
             row["match_type"] = str(meta.get("match_type", "fit"))
             row["match_reason"] = str(meta.get("match_reason", "Peer fit"))
+            row["match_source"] = str(meta.get("match_source", "unknown"))
             try:
                 row["match_score"] = float(meta.get("match_score", 0))
             except (TypeError, ValueError):
                 row["match_score"] = 0.0
 
-        better = sorted(
-            [x for x in peer_rows if x["risk_score"] < failing_risk_score],
-            key=lambda x: (x["risk_score"], -float(x.get("match_score", 0.0))),
-        )
+        high_fit_pool = [x for x in peer_rows if float(x.get("match_score", 0.0)) >= 60.0]
+        selection_pool = high_fit_pool if high_fit_pool else peer_rows
+        healthy_pool = [x for x in selection_pool if not _looks_distressed_symbol(str(x.get("ticker", "")))]
+        if healthy_pool:
+            selection_pool = healthy_pool
+
+        def _survivor_sort_key(row: Dict[str, object]) -> Tuple[float, float, bool, int]:
+            return (
+                -float(row.get("match_score", 0.0)),
+                float(row.get("risk_score", 100.0)),
+                bool(row.get("estimated", False)),
+                -int(row.get("core_quality", 0)),
+            )
+
+        better = [x for x in selection_pool if x["risk_score"] < failing_risk_score]
         survivor_rows = (
-            better[:survivor_count]
+            sorted(better, key=_survivor_sort_key)[:survivor_count]
             if better
-            else sorted(
-                peer_rows,
-                key=lambda x: (x["risk_score"], -float(x.get("match_score", 0.0))),
-            )[:survivor_count]
+            else sorted(selection_pool, key=_survivor_sort_key)[:survivor_count]
         )
 
         survivor_tickers = [x["ticker"] for x in survivor_rows]
@@ -2069,30 +2047,40 @@ def main() -> None:
             )
             reasoning = _legacy_reasoning_from_council(council_output)
         else:
-            reasoning = reasoning_client.generate_reasoning(
-                company_name=profile.name,
-                ticker=profile.ticker,
-                industry=profile.industry,
-                failing_risk_score=failing_risk_score,
-                survivor_tickers=survivor_tickers,
-                layer_signals={
-                    "macro": list(layers.get("macro", {}).get("signals", [])),
-                    "business_model": list(layers.get("business_model", {}).get("signals", [])),
-                    "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
-                    "operational": list(layers.get("operational", {}).get("signals", [])),
-                    "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
+            reasoning, reasoning_errors, _ = _invoke_with_provider_failover(
+                provider_chain=single_provider_chain,
+                method_name="generate_reasoning",
+                payload={
+                    "company_name": profile.name,
+                    "ticker": profile.ticker,
+                    "industry": profile.industry,
+                    "failing_risk_score": failing_risk_score,
+                    "survivor_tickers": survivor_tickers,
+                    "layer_signals": {
+                        "macro": list(layers.get("macro", {}).get("signals", [])),
+                        "business_model": list(layers.get("business_model", {}).get("signals", [])),
+                        "financial_health": list(layers.get("financial_health", {}).get("signals", [])),
+                        "operational": list(layers.get("operational", {}).get("signals", [])),
+                        "qualitative": list(layers.get("qualitative", {}).get("signals", [])),
+                    },
+                    "metric_gaps": comparison["metric_gaps"],
+                    "simulation": simulation,
+                    "recommendations": recommendations,
+                    "tavily_notes": (
+                        intelligence["macro_notes"]
+                        + intelligence["micro_notes"]
+                        + intelligence["industry_notes"]
+                        + intelligence["news_notes"]
+                        + intelligence["strategy_notes"]
+                    ),
                 },
-                metric_gaps=comparison["metric_gaps"],
-                simulation=simulation,
-                recommendations=recommendations,
-                tavily_notes=(
-                    intelligence["macro_notes"]
-                    + intelligence["micro_notes"]
-                    + intelligence["industry_notes"]
-                    + intelligence["news_notes"]
-                    + intelligence["strategy_notes"]
+                validator=lambda row: bool(
+                    str(row.get("plain_english_explainer", "")).strip()
+                    or str(row.get("executive_summary", "")).strip()
                 ),
             )
+            if reasoning is None:
+                reasoning = _fallback_reasoning(recommendations, reasoning_errors)
 
         reasoning = _strengthen_reasoning(
             reasoning,
@@ -2142,7 +2130,10 @@ def main() -> None:
     v1, v2, v3 = st.columns([1.6, 1, 1])
     v1.write(f"Resolved: **{profile.name} ({profile.ticker})**")
     v2.metric("Failure Confidence", f"{float(failure_status.get('confidence', 0.0))*100:.1f}%")
-    v3.write(f"Model: `{failure_status.get('model_used', 'fallback')}`")
+    v3.write(
+        f"Provider: `{failure_status.get('provider_used', 'fallback')}` | "
+        f"Model: `{failure_status.get('model_used', 'fallback')}`"
+    )
 
     failed = bool(failure_status.get("is_failed", False))
     if failed:
@@ -2215,30 +2206,60 @@ def main() -> None:
             use_container_width=True,
         )
 
-    tabs = st.tabs(["Simple View", "Analyst View", "Council Output", "Council Trace", "Scenario Lab", "Model Lab", "Evidence"])
+    tabs = st.tabs(["Overview", "Analyst View", "Council Output", "Council Trace", "Scenario Lab", "Evidence"])
 
     with tabs[0]:
-        st.markdown("### Plain-English Story")
-        st.markdown(
-            "<div class='wow'><b>Judge Highlight:</b> This engine combines forensic reconstruction, survivor benchmarking, and "
-            "counterfactual simulation in one flow.</div>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"<div class='explain'>{reasoning.get('plain_english_explainer', 'No plain-English summary available.')}</div>",
-            unsafe_allow_html=True,
-        )
-        st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+        # ── Overview: headline metrics + plain-English story
+        v1, v2, v3, v4 = st.columns(4)
+        v1.metric("Failure Risk", f"{failing_risk_score:.2f}/100",
+                  delta=f"vs survivor {float(comparison.get('survivor_average_risk_score', 0)):.1f}")
+        v2.metric("Altman Z-Score", f"{float(failing_metrics.get('altman_z', 0.0)):.2f}",
+                  delta="< 1.81 = distress" if float(failing_metrics.get("altman_z", 2.0)) < 1.81 else "> 2.99 = safe")
+        v3.metric("NLP Distress", f"{float(qual.get('distress_intensity',0)):.1f}/10")
+        v4.metric("Council Confidence",
+                  f"{float(council_output.get('overall_confidence', 0.0))*100:.0f}%" if council_output else "N/A")
+
+        fail_text = str(reasoning.get("plain_english_explainer", "") or "").strip()
+        if fail_text:
+            st.markdown(f"<div class='explain' style='margin-top:0.8rem;'>{html.escape(fail_text)}</div>",
+                        unsafe_allow_html=True)
+
+        # ── Why it failed (driver bullets)
+        drivers = list((council_output or {}).get("failure_drivers", []) or reasoning.get("why_it_failed", []) or [])
+        if drivers:
+            items = ""
+            for item in drivers[:6]:
+                d = str(item.get("driver", item) if isinstance(item, dict) else item)
+                conf = float(item.get("confidence", 0.0)) * 100 if isinstance(item, dict) else 0
+                items += f"<div class='council-driver'>{html.escape(d)}{f' — <span style=color:#ef4444>{conf:.0f}% confidence</span>' if conf else ''}</div>"
+            st.markdown(
+                f"<div class='council-card' style='margin-top:0.8rem;'>"
+                f"<div class='council-model-badge'>⚡ Why It Failed</div>{items}</div>",
+                unsafe_allow_html=True)
+
+        # ── What would have prevented it
+        strategies = list((council_output or {}).get("survivor_strategies", []) or reasoning.get("how_it_could_have_been_prevented", []) or [])
+        if strategies:
+            items = ""
+            for item in strategies[:5]:
+                s = str(item.get("strategy", item) if isinstance(item, dict) else item)
+                items += f"<div class='council-strategy'>{html.escape(s)}</div>"
+            st.markdown(
+                f"<div class='council-card' style='border-color:rgba(16,185,129,0.3);'>"
+                f"<div class='council-model-badge' style='background:rgba(16,185,129,0.15);color:#6ee7b7;border-color:rgba(16,185,129,0.3);'>✓ How It Could Have Been Prevented</div>{items}</div>",
+                unsafe_allow_html=True)
 
         s1, s2, s3, s4 = st.columns(4)
         s1.metric("Failure Risk", f"{failing_risk_score:.2f}/100")
         s2.metric("Adjusted Risk", f"{float(simulation['adjusted_score']):.2f}/100")
         s3.metric("Risk Improvement", f"{float(simulation['improvement_percentage']):.2f}%")
         s4.metric("Local Analyst", f"{local_before.risk_probability*100:.1f}%")
-        st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
         st.caption(
             f"NLP distress intensity: {float(qual.get('distress_intensity', 0.0)):.1f}/10 "
             f"(confidence {float(qual.get('confidence', 0.0))*100:.0f}%)."
+        )
+        st.caption(
+            "Counterfactual data is simulated (not historical): it replaces failed-company metrics with matched survivor averages."
         )
 
         c_left, c_right = st.columns(2)
@@ -2324,28 +2345,83 @@ def main() -> None:
                 st.dataframe(survivor_table, use_container_width=True)
 
         st.markdown("#### Risk Component Mix")
-        st.altair_chart(_chart_risk_components(failing_components), use_container_width=True)
+        st.plotly_chart(_chart_risk_components(failing_components), use_container_width=True, config={"displayModeBar": "hover"})
 
         st.markdown("#### Component Delta vs Survivors")
-        st.altair_chart(
-            _chart_component_delta(
-                comparison.get("failing_components", {}),
-                comparison.get("survivor_components", {}),
-            ),
-            use_container_width=True,
-        )
+        st.plotly_chart(_chart_component_delta(comparison.get("failing_components",{}), comparison.get("survivor_components",{})), use_container_width=True, config={"displayModeBar":"hover"})
 
         st.markdown("#### Risk Contribution Decomposition")
-        st.altair_chart(_chart_risk_contribution(failing_components), use_container_width=True)
+        st.plotly_chart(_chart_risk_contribution(failing_components), use_container_width=True, config={"displayModeBar":"hover"})
 
         st.markdown("#### Layer Stress Heatmap")
-        st.altair_chart(_chart_layer_stress_heatmap(layers, intelligence, qual), use_container_width=True)
-
-        st.markdown("#### Peer Positioning Map")
-        st.altair_chart(
-            _chart_peer_positioning(profile.ticker, failing_metrics, failing_risk_score, survivor_rows),
-            use_container_width=True,
+        # Plotly heatmap for layer stress
+        import plotly.graph_objects as go
+        import plotly.express as px
+        _layer_names = ["Macro", "Business", "Financial", "Operational", "Qualitative"]
+        _layer_keys = ["macro", "business_model", "financial_health", "operational", "qualitative"]
+        _layer_scores = [float((layers.get(k, {}) or {}).get("score", 0.0)) for k in _layer_keys]
+        _hm_fig = go.Figure(go.Bar(
+            x=_layer_names, y=_layer_scores,
+            marker=dict(
+                color=_layer_scores,
+                colorscale=[[0, "#10b981"], [0.4, "#f97316"], [1, "#ef4444"]],
+                line=dict(width=0), showscale=True,
+                colorbar=dict(title="Stress", tickfont=dict(color="#94a3b8"), titlefont=dict(color="#94a3b8")),
+            ),
+            text=[f"{s:.2f}" for s in _layer_scores], textposition="outside",
+            textfont=dict(color="#f1f5f9", size=13, family="Inter"),
+            hovertemplate="<b>%{x}</b><br>Stress Score: %{y:.2f}<extra></extra>",
+        ))
+        _hm_fig.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94a3b8", family="Inter"),
+            margin=dict(l=0, r=0, t=30, b=0), height=260,
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", title="Stress Score", range=[0, 1.15]),
+            title=dict(text="Layer Stress Heatmap (hover for signal details)", font=dict(color="#e2e8f0", size=13)),
         )
+        st.plotly_chart(_hm_fig, use_container_width=True, config={"displayModeBar": "hover"})
+
+        # Plotly interactive peer positioning bubble chart
+        _peer_fig_rows = []
+        for _pr in survivor_rows[:8]:
+            _peer_fig_rows.append({
+                "Company": str(_pr.get("ticker", "")),
+                "Risk": float(_pr.get("risk_score", 0)),
+                "DE": float((_pr.get("metrics") or {}).get("debt_to_equity", 1.5) or 1.5),
+                "CR": float((_pr.get("metrics") or {}).get("current_ratio", 1.2) or 1.2),
+                "Type": "Survivor",
+            })
+        _peer_fig_rows.append({
+            "Company": profile.ticker,
+            "Risk": failing_risk_score,
+            "DE": float(failing_metrics.get("debt_to_equity", 3.0) or 3.0),
+            "CR": float(failing_metrics.get("current_ratio", 0.8) or 0.8),
+            "Type": "Subject",
+        })
+        _pf_df = pd.DataFrame(_peer_fig_rows)
+        _pf_fig = px.scatter(
+            _pf_df, x="DE", y="CR", size="Risk", color="Type", text="Company",
+            color_discrete_map={"Survivor": "#10b981", "Subject": "#ef4444"},
+            size_max=40, title="Peer Positioning: Debt/Equity vs Liquidity",
+            labels={"DE": "Debt / Equity", "CR": "Current Ratio (Liquidity)", "Risk": "Risk Score"},
+        )
+        _pf_fig.update_traces(textposition="top center", textfont=dict(color="#f1f5f9", size=10))
+        _pf_fig.update_layout(
+            plot_bgcolor="rgba(255,255,255,0.02)", paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94a3b8", family="Inter"),
+            margin=dict(l=0, r=0, t=40, b=0), height=320,
+            xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#94a3b8",
+                       title="Debt / Equity (lower = safer)"),
+            yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#94a3b8",
+                       title="Current Ratio (higher = safer)"),
+            legend=dict(font=dict(color="#94a3b8"), bgcolor="rgba(0,0,0,0)"),
+        )
+        _pf_fig.add_hline(y=1.0, line_dash="dash", line_color="rgba(245,158,11,0.5)",
+                           annotation_text="CR=1.0 danger zone", annotation_font_color="#fcd34d")
+        _pf_fig.add_vline(x=3.0, line_dash="dash", line_color="rgba(239,68,68,0.4)",
+                           annotation_text="DTE=3.0 high risk", annotation_font_color="#fca5a5")
+        st.plotly_chart(_pf_fig, use_container_width=True, config={"displayModeBar": "hover"})
 
         st.markdown("#### NLP Distress Forensics")
         q1, q2, q3 = st.columns(3)
@@ -2353,7 +2429,7 @@ def main() -> None:
         q2.metric("NLP Confidence", f"{float(qual.get('confidence', 0.0))*100:.1f}%")
         q3.metric("Positive vs Negated", f"{int(qual.get('positive_mentions', 0))} / {int(qual.get('negated_total', 0))}")
 
-        st.altair_chart(_chart_nlp_theme_scores(qual), use_container_width=True)
+        st.plotly_chart(_chart_nlp_theme_scores(qual), use_container_width=True, config={"displayModeBar": "hover"})
         kdf = pd.DataFrame({"Top Keywords": list(qual.get("keywords", []))[:15]})
         if not kdf.empty:
             st.dataframe(kdf, use_container_width=True)
@@ -2383,7 +2459,7 @@ def main() -> None:
 
     with tabs[3]:
         if reasoning_mode == "Collaborative Council (recommended)" and council_output:
-            _render_council_trace_tab(council_output)
+            _render_council_trace_tab(council_output, qual=qual)
         else:
             st.info("Council mode is off. Switch Reasoning Mode to `Collaborative Council (recommended)` to inspect the multi-system trace.")
 
@@ -2394,37 +2470,33 @@ def main() -> None:
         s_col1, s_col2 = st.columns(2)
         with s_col1:
             dte = st.slider(
-                "Debt / Equity",
-                min_value=0.2,
-                max_value=6.0,
+                "Debt / Equity Ratio",
+                min_value=0.2, max_value=6.0,
                 value=float(failing_metrics.get("debt_to_equity") or 3.1),
-                step=0.05,
-                help="Lower debt/equity usually reduces distress risk.",
+                step=0.1, key="scen_dte",
+                help="🎯 Altman Z-Score: DTE > 3.0 = HIGH distress. Target: < 1.5 (survivor avg).",
             )
             cr = st.slider(
-                "Current Ratio",
-                min_value=0.3,
-                max_value=3.0,
+                "Current Ratio (Liquidity)",
+                min_value=0.3, max_value=3.0,
                 value=float(failing_metrics.get("current_ratio") or 0.8),
-                step=0.05,
-                help="Higher current ratio indicates stronger short-term liquidity.",
+                step=0.05, key="scen_cr",
+                help="🎯 CR < 1.0 = liquidity crisis. Target: > 1.5 to match survivor cohort.",
             )
         with s_col2:
             burn_m = st.slider(
                 "Annual Cash Burn ($M)",
-                min_value=0,
-                max_value=500,
+                min_value=0, max_value=500,
                 value=int((failing_metrics.get("cash_burn") or 250_000_000.0) / 1_000_000),
-                step=5,
-                help="Lower cash burn generally improves resilience.",
+                step=10, key="scen_burn",
+                help="🎯 Burn > 20% of revenue is unsustainable. Reduce toward break-even.",
             )
             rev_growth = st.slider(
-                "Revenue Growth",
-                min_value=-0.5,
-                max_value=0.4,
+                "Revenue Growth Rate",
+                min_value=-0.5, max_value=0.4,
                 value=float(failing_metrics.get("revenue_growth") or -0.1),
-                step=0.01,
-                help="Higher growth improves demand-side resilience.",
+                step=0.02, key="scen_rev",
+                help="🎯 Negative growth compounds distress. Survivors averaged +8% growth.",
             )
 
         custom_metrics = dict(failing_metrics)
@@ -2442,38 +2514,55 @@ def main() -> None:
         c_metric1.metric("Original Risk", f"{failing_risk_score:.2f}")
         c_metric2.metric("Scenario Risk", f"{custom_score:.2f}")
         c_metric3.metric("Scenario Improvement", f"{custom_improvement:.2f}%")
-        st.altair_chart(_chart_before_after(failing_risk_score, custom_score), use_container_width=True)
+        # Plotly interactive scenario comparison
+        import plotly.graph_objects as go
+        fig_scenario = go.Figure()
+        colors = ["#ef4444" if failing_risk_score > 50 else "#f97316", "#10b981"]
+        labels = ["Current Risk", "Scenario Risk"]
+        values = [failing_risk_score, custom_score]
+        for i, (lbl, val, col) in enumerate(zip(labels, values, colors)):
+            fig_scenario.add_trace(go.Bar(
+                x=[lbl], y=[val], name=lbl,
+                marker=dict(color=col, line=dict(width=0)),
+                text=[f"{val:.1f}"], textposition="outside",
+                textfont=dict(color="#f1f5f9", size=16, family="Inter"),
+                hovertemplate=f"<b>{lbl}</b><br>Risk Score: %{{y:.2f}}<extra></extra>",
+            ))
+        fig_scenario.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94a3b8", family="Inter"),
+            margin=dict(l=0, r=0, t=20, b=0), height=280,
+            xaxis=dict(showgrid=False, color="#94a3b8"),
+            yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#94a3b8",
+                       range=[0, max(values)*1.25], title="Risk Score"),
+            showlegend=False, barmode="group",
+        )
+        st.plotly_chart(fig_scenario, use_container_width=True, config={"displayModeBar": False})
+
+        # ── What-if narrative ──────────────────────────────────────────────
+        improvement = custom_improvement
+        if improvement > 0:
+            if dte < float(failing_metrics.get("debt_to_equity") or 3.1):
+                st.markdown(
+                    f"<div class='council-strategy'>Reducing Debt/Equity from "
+                    f"{float(failing_metrics.get('debt_to_equity') or 3.1):.1f}x → {dte:.1f}x cuts "
+                    f"leverage risk, freeing cash for operations and reducing covenant breach probability.</div>",
+                    unsafe_allow_html=True)
+            if cr > float(failing_metrics.get("current_ratio") or 0.8):
+                st.markdown(
+                    f"<div class='council-strategy'>Improving Liquidity (CR {float(failing_metrics.get('current_ratio') or 0.8):.2f} → {cr:.2f}) "
+                    f"reduces short-term default risk and buys runway for restructuring.</div>",
+                    unsafe_allow_html=True)
+            if rev_growth > float(failing_metrics.get("revenue_growth") or -0.1):
+                st.markdown(
+                    f"<div class='council-strategy'>Revenue growth improvement ({float(failing_metrics.get('revenue_growth') or -0.1)*100:.0f}% → {rev_growth*100:.0f}%) "
+                    f"signals demand recovery — the strongest predictor of avoiding bankruptcy.</div>",
+                    unsafe_allow_html=True)
+        else:
+            st.markdown("<div class='council-driver'>These scenario parameters increase risk relative to the baseline. Try lowering debt or improving liquidity.</div>",
+                unsafe_allow_html=True)
 
     with tabs[5]:
-        st.markdown("### Local Analyst Model (Trained In-App)")
-        st.info(
-            "What this tab does: it runs a local in-app analyst model that estimates distress probability from financial + macro signals. "
-            "It is used as a second opinion beside the selected LLM provider so reasoning is more stable and auditable."
-        )
-        st.write(
-            "How to read it: higher probability means the company profile looks more distressed. "
-            "Top Local Drivers tell you which factors are pushing risk up or down."
-        )
-
-        m1, m2 = st.columns(2)
-        with m1:
-            st.metric("Local Distress Probability", f"{local_before.risk_probability*100:.1f}%")
-            st.write(f"Classification: **{local_before.label}**")
-            st.markdown("Top Local Drivers:")
-            for d in local_before.top_drivers:
-                st.write(f"- {d}")
-        with m2:
-            features_df = pd.DataFrame(
-                [{"Feature": k.replace("_", " ").title(), "Value": v} for k, v in local_before.feature_values.items()]
-            )
-            st.dataframe(features_df, use_container_width=True)
-
-        if reasoning.get("technical_notes"):
-            st.markdown("LLM Technical Notes:")
-            for note in reasoning.get("technical_notes", [])[:3]:
-                st.write(f"- {note}")
-
-    with tabs[6]:
         _render_workflow_trace(
             profile_name=profile.name,
             ticker=profile.ticker,
@@ -2569,34 +2658,28 @@ def main() -> None:
                 st.rerun()
 
             for msg in st.session_state.get("assistant_messages", [])[-8:]:
-                st.markdown(_chat_bubble(str(msg.get("text", "")), str(msg.get("role", "assistant"))), unsafe_allow_html=True)
+                text_content = str(msg.get("text", ""))
+                role = str(msg.get("role", "assistant"))
+                if "<div class='typing-dots'>" in text_content:
+                    html_str = f"<div class='chat-bubble-ai'>🤖 SignalForge AI is thinking... <div class='typing-dots'><span></span><span></span><span></span></div></div>"
+                    st.html(html_str)
+                else:
+                    st.markdown(_chat_bubble(text_content, role), unsafe_allow_html=True)
 
-            with st.form("jarvis_form", clear_on_submit=True):
-                ask_q = st.text_input(
-                    "Ask about this report...",
-                    key="jarvis_q",
-                    label_visibility="collapsed",
-                    placeholder="Ask about this report...",
-                )
-                send_now = st.form_submit_button(
-                    "Ask Me",
-                    type="primary",
-                    use_container_width=True,
-                    disabled=bool(st.session_state.get("assistant_waiting", False)),
-                )
-
-            if send_now and ask_q.strip() and not st.session_state.get("assistant_waiting", False):
-                q = ask_q.strip()
-                st.session_state["assistant_messages"].append({"role": "user", "text": q})
-                st.session_state["assistant_messages"].append({"role": "assistant", "text": "Typing..."})
-                st.session_state["assistant_pending_question"] = q
-                st.session_state["assistant_waiting"] = True
-                st.session_state["jarvis_q"] = ""
-                st.rerun()
+            # Use st.chat_input for immediate clearing on submit
+            if ask_q := st.chat_input("Ask about this report...", key="jarvis_chat_input"):
+                if not st.session_state.get("assistant_waiting", False):
+                    q = ask_q.strip()
+                    st.session_state["assistant_messages"].append({"role": "user", "text": q})
+                    st.session_state["assistant_messages"].append({"role": "assistant", "text": "<div class='typing-dots'><span></span><span></span><span></span></div>"})
+                    st.session_state["assistant_pending_question"] = q
+                    st.session_state["assistant_waiting"] = True
+                    st.rerun()
 
             pending_q = st.session_state.get("assistant_pending_question")
             if st.session_state.get("assistant_waiting", False) and pending_q:
-                with st.spinner("SignalForge AI is analyzing..."):
+                # Calculate silently, letting the typing bubble show instead of a spinner
+                if True:
                     try:
                         web_search_1 = tavily.search(
                             f"{profile.name} {profile.ticker} {pending_q}",
@@ -2612,15 +2695,67 @@ def main() -> None:
                         for snippet, source in zip(web_search_2.snippets[:4], web_search_2.sources[:4]):
                             web_evidence.append({"snippet": snippet, "source": source})
 
-                        answer = reasoning_client.answer_report_question(
-                            question=pending_q,
-                            report_context=qa_context,
-                            web_evidence=web_evidence,
+                        # Build a rich knowledge-base system context for the chatbot
+                        failure_knowledge_base = """
+You are SignalForge AI — a specialist in corporate failure forensics, financial distress, and turnaround strategy.
+You have been trained on:
+
+## Bankruptcy Prediction Models
+- **Altman Z-Score**: Z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5. Z < 1.81 distress zone, 1.81–2.99 grey, > 2.99 safe.
+- **Ohlson O-Score**: Logistic model using 9 factors including firm size, leverage, liquidity, and performance.
+- **Zmijewski Model**: Focuses on ROA, leverage, and liquidity as the three strongest failure predictors.
+- **Campbell-Hilscher-Szilagyi (2008)**: Market-based distress probability from equity volatility + book leverage.
+
+## The 5 Failure Archetypes
+1. **Liquidity Squeeze**: Current ratio < 1.0, negative working capital, revolving credit exhausted → Lehman, SVB, Bear Stearns.
+2. **Debt Death Spiral**: Debt/Equity > 3x, covenant breaches, refinancing wall → Enron, TXU Energy Future, iHeartMedia.
+3. **Revenue Collapse**: Revenue declining > 15% YoY, negative operating leverage → Blockbuster, Kodak, RadioShack.
+4. **Fraud / Governance Failure**: Accounting manipulation, SEC investigation, sudden auditor departure → WorldCom, Theranos, FTX.
+5. **Disruption Obsolescence**: Business model disruption + failure to pivot + cash burn → Borders, Sears, Toys R Us.
+
+## Key Metric Thresholds for Distress
+- Debt/Equity > 3.0: HIGH risk
+- Current Ratio < 0.8: CRITICAL liquidity
+- Cash Burn > 20% revenue: UNSUSTAINABLE
+- Revenue Growth < -10%: SEVERE demand decline
+- Operating Margin < -5%: STRUCTURAL loss
+- Interest Coverage < 1.5x: DEFAULT risk
+
+## Survivor Best Practices
+- Survivors rebalanced to Debt/Equity < 1.5 within 18 months of stress signal
+- Maintained > 6 months cash runway at all times
+- Diversified revenue streams to reduce single-product/channel concentration
+- Reduced fixed costs by 15-25% while preserving R&D investment
+- Secured revolving credit facilities BEFORE they were needed
+
+## Analysis Framework
+When answering, always:
+1. Reference the specific metric values from the report context
+2. Map findings to one of the 5 archetypes
+3. Cite the risk score and what drives it
+4. Give a precise, actionable recommendation with timeline
+5. Acknowledge uncertainty where present
+"""
+                        answer, answer_errors, provider_used = _invoke_with_provider_failover(
+                            provider_chain=single_provider_chain,
+                            method_name="answer_report_question",
+                            payload={
+                                "question": pending_q,
+                                "report_context": qa_context,
+                                "web_evidence": web_evidence,
+                                "system_knowledge": failure_knowledge_base,
+                            },
+                            validator=lambda row: bool(str(row.get("answer", "")).strip()),
                         )
+                        if answer is None:
+                            answer = _fallback_answer(answer_errors)
+                            provider_used = "fallback"
                         answer_text = str(answer.get("answer", "")).strip() or "I recommend starting with immediate liquidity stabilization."
                         rationale = str(answer.get("rationale", "")).strip()
                         if rationale:
                             answer_text = f"{answer_text}\n\nWhy: {rationale}"
+                        if provider_used:
+                            answer_text = f"{answer_text}\n\nSource model: {provider_used}"
                     except Exception:
                         answer_text = "I could not complete that request right now. Please try again."
 
@@ -2643,7 +2778,8 @@ def main() -> None:
         )
     else:
         st.caption(
-            f"Reasoning mode: {reasoning_mode} | Model: {reasoning.get('model_used', 'fallback')} | "
+            f"Reasoning mode: {reasoning_mode} | Provider: {reasoning.get('provider_used', active_provider_name)} | "
+            f"Model: {reasoning.get('model_used', 'fallback')} | "
             f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         )
 

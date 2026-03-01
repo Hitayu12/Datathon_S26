@@ -37,9 +37,15 @@ def _with_timing(fn, *args, **kwargs) -> Tuple[Optional[Dict[str, Any]], int, Op
         return None, latency_ms, str(exc)
 
 
-def _ensure_evidence_ids(items: List[Dict[str, Any]], available_ids: List[int]) -> List[Dict[str, Any]]:
+def _ensure_evidence_ids(items: List[Any], available_ids: List[int]) -> List[Dict[str, Any]]:
     output: List[Dict[str, Any]] = []
     for row in items:
+        if isinstance(row, str):
+            # If the LLM returned a list of strings instead of dicts
+            row = {"driver": row, "strategy": row, "evidence_ids": [], "confidence": 0.45}
+        elif not isinstance(row, dict):
+            continue
+
         evidence_ids = []
         for value in row.get("evidence_ids", []) or []:
             try:
@@ -49,14 +55,13 @@ def _ensure_evidence_ids(items: List[Dict[str, Any]], available_ids: List[int]) 
             if idx in available_ids and idx not in evidence_ids:
                 evidence_ids.append(idx)
 
+        new_row = dict(row)
         if not evidence_ids:
-            row = dict(row)
-            row["evidence_ids"] = []
-            row["confidence"] = min(float(row.get("confidence", 0.0) or 0.0), 0.45)
+            new_row["evidence_ids"] = []
+            new_row["confidence"] = min(float(new_row.get("confidence", 0.0) or 0.0), 0.45)
         else:
-            row = dict(row)
-            row["evidence_ids"] = evidence_ids
-        output.append(row)
+            new_row["evidence_ids"] = evidence_ids
+        output.append(new_row)
     return output
 
 
@@ -235,9 +240,9 @@ def run_reasoning_council(inputs: Dict[str, Any]) -> Dict[str, Any]:
         watsonx_latency_ms = 0
         watsonx_error: Optional[str] = None
         if critique_future is not None:
-            watsonx_raw, watsonx_latency_ms, watsonx_error = critique_future.result(timeout=20)
+            watsonx_raw, watsonx_latency_ms, watsonx_error = critique_future.result(timeout=60)
 
-        local_raw, local_latency_ms, local_error = local_future.result(timeout=20)
+        local_raw, local_latency_ms, local_error = local_future.result(timeout=60)
 
     synthesis_provider = inputs.get("synthesis_provider", "watsonx")
     synthesis_client = watsonx_client if synthesis_provider == "watsonx" and watsonx_client is not None else groq_client

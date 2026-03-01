@@ -152,11 +152,14 @@ def normalize_council_output(payload: Optional[Dict[str, Any]]) -> CouncilOutput
 
     counterfactual = raw.get("counterfactual_impact", {}) or {}
     breakdown_raw = raw.get("model_breakdown", {}) or {}
+    def _safe_dict(val: Any) -> Dict[str, Any]:
+        return val if isinstance(val, dict) else {}
+
     model_breakdown = {
         key: ModelBreakdownEntry(
-            raw=(breakdown_raw.get(key, {}) or {}).get("raw", {}) if isinstance(breakdown_raw.get(key, {}), dict) else {},
-            latency_ms=_coerce_int((breakdown_raw.get(key, {}) or {}).get("latency_ms"), 0),
-            errors=(breakdown_raw.get(key, {}) or {}).get("errors") if isinstance(breakdown_raw.get(key, {}), dict) else None,
+            raw=_safe_dict(breakdown_raw.get(key, {})).get("raw", {}),
+            latency_ms=_coerce_int(_safe_dict(breakdown_raw.get(key, {})).get("latency_ms"), 0),
+            errors=_safe_dict(breakdown_raw.get(key, {})).get("errors"),
         )
         for key in ["groq", "watsonx", "local"]
     }

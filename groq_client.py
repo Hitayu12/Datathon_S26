@@ -294,6 +294,7 @@ class GroqReasoningClient:
         question: str,
         report_context: Dict[str, Any],
         web_evidence: Optional[List[Dict[str, str]]] = None,
+        system_knowledge: str = "",
     ) -> Dict[str, str]:
         """Answer user follow-up questions about the generated report."""
         def _heuristic_answer() -> Dict[str, str]:
@@ -328,6 +329,8 @@ class GroqReasoningClient:
             return _heuristic_answer()
 
         system_prompt = ANSWER_REPORT_QUESTION_SYSTEM_PROMPT
+        if system_knowledge.strip():
+            system_prompt = f"{system_prompt}\n\nAdditional domain knowledge:\n{system_knowledge.strip()}"
         user_prompt = build_answer_report_question_user_prompt(
             question=question,
             report_context=report_context,

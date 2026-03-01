@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import Counter
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 STOP_WORDS = {
     "a",
@@ -62,9 +62,12 @@ THEME_PATTERNS: Dict[str, List[Tuple[str, float]]] = {
         (r"\bgoing concern\b", 1.8),
         (r"\bcash shortfall\b", 1.5),
         (r"\bworking capital\b", 1.1),
-        (r"\bcurrent liabilities\b", 1.0),
+        (r"\bcurrent liabilities exceed\b", 1.3),
         (r"\btight cash\b", 1.4),
         (r"\blimited cash runway\b", 1.7),
+        (r"\bcash crunch\b", 1.6),
+        (r"\binability to pay\b", 1.9),
+        (r"\bcurrent ratio below\b", 1.5),
     ],
     "debt_stress": [
         (r"\bcovenant(?: breach)?\b", 1.8),
@@ -74,6 +77,9 @@ THEME_PATTERNS: Dict[str, List[Tuple[str, float]]] = {
         (r"\binterest burden\b", 1.3),
         (r"\bdefault(?: risk)?\b", 1.7),
         (r"\bdebt restructuring\b", 1.6),
+        (r"\bheavy debt load\b", 1.4),
+        (r"\bover-leveraged\b", 1.5),
+        (r"\bdebt to equity\b", 1.1),
     ],
     "demand_decline": [
         (r"\bdeclin(?:ing|ed)\s+demand\b", 1.6),
@@ -82,6 +88,28 @@ THEME_PATTERNS: Dict[str, List[Tuple[str, float]]] = {
         (r"\bvolume decline\b", 1.3),
         (r"\bcustomer slowdown\b", 1.3),
         (r"\bweaker demand\b", 1.2),
+        (r"\bloss of customers\b", 1.4),
+        (r"\bmarket share loss\b", 1.3),
+    ],
+    "revenue_decline": [
+        (r"\brevenue declin(?:e|ing)\b", 1.7),
+        (r"\bdeclining revenue\b", 1.7),
+        (r"\bfalling revenue\b", 1.5),
+        (r"\brevenue contraction\b", 1.6),
+        (r"\bnegative revenue growth\b", 1.6),
+        (r"\btop.line decline\b", 1.5),
+        (r"\bsales decline\b", 1.4),
+        (r"\bshrinking sales\b", 1.4),
+    ],
+    "cash_crisis": [
+        (r"\boperating cash burn\b", 1.8),
+        (r"\bcash burn rate\b", 1.6),
+        (r"\bnegative free cash flow\b", 1.7),
+        (r"\bfunding gap\b", 1.6),
+        (r"\bcapital raise required\b", 1.5),
+        (r"\brunning out of cash\b", 2.0),
+        (r"\bcash consumed\b", 1.4),
+        (r"\bhigh burn\b", 1.5),
     ],
     "margin_pressure": [
         (r"\bmargin compression\b", 1.6),
@@ -89,6 +117,8 @@ THEME_PATTERNS: Dict[str, List[Tuple[str, float]]] = {
         (r"\bpricing pressure\b", 1.3),
         (r"\bgross margin decline\b", 1.5),
         (r"\boperating margin contraction\b", 1.5),
+        (r"\bnegative operating margin\b", 1.6),
+        (r"\bunit economics deteriorat\b", 1.4),
     ],
     "legal_regulatory": [
         (r"\blitigation\b", 1.0),
@@ -97,6 +127,9 @@ THEME_PATTERNS: Dict[str, List[Tuple[str, float]]] = {
         (r"\bcompliance risk\b", 1.1),
         (r"\binvestigation\b", 1.2),
         (r"\benforcement action\b", 1.4),
+        (r"\bfraud\b", 1.8),
+        (r"\bsec investigation\b", 1.9),
+        (r"\baccounting irregularit\b", 1.7),
     ],
     "bankruptcy_language": [
         (r"\bsubstantial doubt\b", 2.1),
@@ -107,6 +140,8 @@ THEME_PATTERNS: Dict[str, List[Tuple[str, float]]] = {
         (r"\brestructur(?:e|ing)\b", 1.5),
         (r"\bdistress(?:ed)?\b", 1.2),
         (r"\bceased operations\b", 2.0),
+        (r"\bfiled for protection\b", 2.3),
+        (r"\bdebt workout\b", 1.8),
     ],
 }
 
@@ -114,6 +149,8 @@ THEME_IMPORTANCE = {
     "liquidity_concerns": 1.25,
     "debt_stress": 1.20,
     "demand_decline": 1.0,
+    "revenue_decline": 1.15,
+    "cash_crisis": 1.30,
     "margin_pressure": 0.95,
     "legal_regulatory": 0.80,
     "bankruptcy_language": 1.45,
@@ -228,6 +265,125 @@ def combine_text_sources(mdna_text: str, snippets: Iterable[str]) -> str:
     return "\n".join(_dedupe_keep_order(parts))
 
 
+def synthesize_text_from_metrics(metrics: Dict[str, object]) -> str:
+    """Generate financial distress language from raw metric values.
+
+    This ensures the NLP engine always has something to analyze even when
+    no external text (Tavily snippets) is available. Sentences are
+    constructed to match the THEME_PATTERNS regexes directly.
+    """
+    sentences: List[str] = []
+
+    dte = metrics.get("debt_to_equity")
+    cr = metrics.get("current_ratio")
+    burn = metrics.get("cash_burn")
+    revenue = metrics.get("revenue")
+    rev_growth = metrics.get("revenue_growth")
+    op_margin = metrics.get("operating_margin")
+    gross_margin = metrics.get("gross_margin")
+
+    # Debt stress signals
+    if dte is not None:
+        dte_f = float(dte)
+        if dte_f > 4.0:
+            sentences.append(
+                f"The company carries a substantial debt to equity ratio of {dte_f:.1f}, "
+                "indicating an over-leveraged balance sheet and elevated default risk."
+            )
+        elif dte_f > 2.5:
+            sentences.append(
+                f"High leverage with a debt to equity of {dte_f:.1f} creates significant "
+                "interest burden and refinancing pressure."
+            )
+        elif dte_f > 1.5:
+            sentences.append(
+                f"The debt to equity of {dte_f:.1f} signals moderate leverage with potential "
+                "covenant breach risk under stressed conditions."
+            )
+
+    # Liquidity signals
+    if cr is not None:
+        cr_f = float(cr)
+        if cr_f < 0.8:
+            sentences.append(
+                f"Current ratio below {cr_f:.2f} indicates the company faces a severe liquidity "
+                "crunch — current liabilities exceed short-term assets substantially. "
+                "Working capital deficit raises going concern questions."
+            )
+        elif cr_f < 1.0:
+            sentences.append(
+                f"Current ratio of {cr_f:.2f} signals tight cash — the company cannot fully cover "
+                "current liabilities, creating liquidity concerns and limited cash runway."
+            )
+        elif cr_f < 1.3:
+            sentences.append(
+                f"Thin liquidity buffer (current ratio {cr_f:.2f}) leaves limited working capital "
+                "headroom for operational stress."
+            )
+
+    # Cash burn / free cash flow
+    if burn is not None and revenue not in (None, 0):
+        burn_f = float(burn)
+        rev_f = abs(float(revenue))
+        burn_ratio = burn_f / rev_f if rev_f > 0 else 0
+        if burn_f > 0 and burn_ratio > 0.15:
+            sentences.append(
+                f"Significant operating cash burn rate — cash consumed by operations represents "
+                f"{burn_ratio*100:.1f}% of revenue, indicating negative free cash flow and a "
+                "high burn rate that may require capital raise."
+            )
+        elif burn_f > 0:
+            sentences.append(
+                "Operating cash burn is present. Negative free cash flow is a meaningful "
+                "distress signal that pressures the funding gap."
+            )
+
+    # Revenue growth
+    if rev_growth is not None:
+        rg_f = float(rev_growth)
+        if rg_f < -0.20:
+            sentences.append(
+                f"Severe revenue decline of {abs(rg_f)*100:.1f}% — declining revenue and "
+                "shrinking sales signals demand decline and top-line contraction."
+            )
+        elif rg_f < -0.05:
+            sentences.append(
+                f"Revenue contraction of {abs(rg_f)*100:.1f}% — falling revenue suggests "
+                "negative revenue growth and weakening market position."
+            )
+        elif rg_f < 0:
+            sentences.append(
+                "Negative revenue growth indicates sales decline, with the company experiencing "
+                "revenue contraction year over year."
+            )
+
+    # Operating margin
+    if op_margin is not None:
+        om_f = float(op_margin)
+        if om_f < -0.10:
+            sentences.append(
+                f"Deeply negative operating margin ({om_f*100:.1f}%) indicates severe margin "
+                "pressure and operating margin contraction — cost structure is unsustainable."
+            )
+        elif om_f < 0:
+            sentences.append(
+                "Negative operating margin reflects operating margin contraction and pricing "
+                "pressure that is eroding profitability."
+            )
+
+    # Gross margin
+    if gross_margin is not None:
+        gm_f = float(gross_margin)
+        if gm_f < 0.15:
+            sentences.append(
+                f"Gross margin of {gm_f*100:.1f}% is critically thin — gross margin decline "
+                "and cost inflation are compressing unit economics."
+            )
+
+    return " ".join(sentences)
+
+
+
 def _extract_theme_hits(sentences: List[str]) -> Dict[str, List[ThemeHit]]:
     hits: Dict[str, List[ThemeHit]] = {theme: [] for theme in THEME_PATTERNS}
     for sentence in sentences:
@@ -338,9 +494,25 @@ def _theme_forensics(sentences: List[str]) -> Dict[str, object]:
     }
 
 
-def qualitative_summary(mdna_text: str, snippets: Iterable[str]) -> Dict[str, object]:
+def qualitative_summary(
+    mdna_text: str,
+    snippets: Iterable[str],
+    metrics: Optional[Dict[str, object]] = None,
+) -> Dict[str, object]:
+    """Produce NLP forensics from text + optional metric-derived synthetic text.
+
+    When real text is thin or unavailable, the function synthesizes financial
+    distress language from `metrics` so theme scores are never all-zero.
+    """
     combined = combine_text_sources(mdna_text, snippets)
-    empty_payload = {
+
+    # Boost with synthetic sentences derived from metrics when available
+    if metrics:
+        synthetic = synthesize_text_from_metrics(metrics)
+        if synthetic.strip():
+            combined = (combined + "\n" + synthetic).strip() if combined else synthetic
+
+    empty_payload: Dict[str, object] = {
         "keywords": [],
         "themes": {theme: 0 for theme in THEME_PATTERNS},
         "theme_signals": [],
@@ -362,7 +534,9 @@ def qualitative_summary(mdna_text: str, snippets: Iterable[str]) -> Dict[str, ob
     sentences = _split_sentences(combined)
     keywords = extract_keywords(combined, top_n=18)
     forensics = _theme_forensics(sentences)
-    theme_signals = [theme for theme, count in (forensics.get("themes", {}) or {}).items() if int(count) > 0]
+    theme_signals = [
+        theme for theme, count in (forensics.get("themes", {}) or {}).items() if int(count) > 0
+    ]
 
     out = dict(empty_payload)
     out.update(
@@ -384,3 +558,4 @@ def qualitative_summary(mdna_text: str, snippets: Iterable[str]) -> Dict[str, ob
         }
     )
     return out
+
