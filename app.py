@@ -125,6 +125,7 @@ def _inject_styles() -> None:
             border: 1px solid #9bb7d9;
             border-radius: 12px;
             padding: 0.7rem 0.8rem;
+            margin-bottom: 1rem;
         }
         .badge {
             display:inline-block; border-radius:999px; font-size:0.8rem; font-weight:700; padding:0.28rem 0.65rem;
@@ -132,14 +133,16 @@ def _inject_styles() -> None:
         }
         .badge-ok { background:#dcfce7; color:#166534; border-color:#bbf7d0; }
         .badge-failed { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
-        .explain { background:#eaf1fb; border:1px solid var(--line); border-left:5px solid var(--teal); border-radius:14px; padding:0.9rem; }
+        .explain { background:#eaf1fb; border:1px solid var(--line); border-left:5px solid var(--teal); border-radius:14px; padding:0.9rem; margin-bottom:1.1rem; }
+        .section-gap { height: 0.9rem; }
 
         div[data-testid="stMetric"] {
             background:#f3f7ff;
             border:1px solid #c2d0e5;
             border-radius:12px;
-            padding:0.5rem 0.7rem;
+            padding:0.7rem 0.9rem;
             box-shadow:0 6px 16px rgba(20,33,61,0.08);
+            margin-bottom: 1rem;
         }
         div[data-testid="stMetricLabel"] p {
             color:#6b7280 !important;
@@ -437,11 +440,13 @@ def _render_council_tab(council_output: Dict[str, Any]) -> None:
         f"<div class='explain'>{html.escape(str(council_output.get('executive_summary', 'Evidence unavailable')))}</div>",
         unsafe_allow_html=True,
     )
+    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
     impact = dict(council_output.get("counterfactual_impact", {}) or {})
     c1, c2, c3 = st.columns(3)
     c1.metric("Overall Confidence", f"{float(council_output.get('overall_confidence', 0.0))*100:.1f}%")
     c2.metric("Before Score", f"{float(impact.get('before_score', 0.0)):.2f}")
     c3.metric("After Score", f"{float(impact.get('after_score', 0.0)):.2f}")
+    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
 
     st.markdown("#### Failure Drivers")
     for item in list(council_output.get("failure_drivers", []) or [])[:5]:
@@ -473,7 +478,55 @@ def _render_council_tab(council_output: Dict[str, Any]) -> None:
         with st.expander(f"{key.title()} Breakdown", expanded=False):
             st.write(f"- Latency: {int(row.get('latency_ms', 0) or 0)} ms")
             st.write(f"- Errors: {row.get('errors') or 'None'}")
-            st.json(row.get("raw", {}))
+            raw = dict(row.get("raw", {}) or {})
+            if key == "groq":
+                st.write(f"- Summary: {raw.get('executive_summary', 'No summary returned.')}")
+                st.write("Top findings:")
+                for item in list(raw.get("failure_drivers", []) or [])[:3]:
+                    if isinstance(item, dict):
+                        st.write(f"  - {item.get('driver', 'No driver returned.')}")
+                    else:
+                        st.write(f"- {item}")
+                st.write("Proposed actions:")
+                for item in list(raw.get("final_recommendations", []) or [])[:3]:
+                    if isinstance(item, dict):
+                        st.write(f"- {item.get('action', 'No action returned.')}")
+            elif key == "watsonx":
+                if "supported_claims" in raw or "unsupported_claims" in raw:
+                    st.write("Supported claims:")
+                    supported = list(raw.get("supported_claims", []) or [])
+                    if supported:
+                        for item in supported[:4]:
+                            st.write(f"- {item}")
+                    else:
+                        st.write("- None explicitly marked supported")
+                    st.write("Unsupported claims:")
+                    unsupported = list(raw.get("unsupported_claims", []) or [])
+                    if unsupported:
+                        for item in unsupported[:4]:
+                            st.write(f"- {item}")
+                    else:
+                        st.write("- None")
+                    st.write("Missing factors:")
+                    for item in list(raw.get("missing_factors", []) or [])[:4]:
+                        st.write(f"- {item}")
+                    st.write("Rewrite suggestions:")
+                    for item in list(raw.get("rewrite_suggestions", []) or [])[:4]:
+                        st.write(f"- {item}")
+                else:
+                    st.write(f"- Summary: {raw.get('executive_summary', 'No summary returned.')}")
+                    for item in list(raw.get("final_recommendations", []) or [])[:3]:
+                        if isinstance(item, dict):
+                            st.write(f"- {item.get('action', 'No action returned.')}")
+            else:
+                st.write(f"- Failure probability: {float(raw.get('failure_probability', 0.0))*100:.1f}%")
+                st.write(f"- Counterfactual probability: {float(raw.get('counterfactual_probability', 0.0))*100:.1f}%")
+                st.write("Top numeric drivers:")
+                for item in list(raw.get("top_numeric_drivers", []) or [])[:3]:
+                    st.write(f"- {item}")
+                st.write("Narrative alignment flags:")
+                for item in list(raw.get("narrative_alignment_flags", []) or [])[:4]:
+                    st.write(f"- {item}")
 
 
 def _render_council_trace_tab(council_output: Dict[str, Any]) -> None:
@@ -539,19 +592,59 @@ def _render_council_trace_tab(council_output: Dict[str, Any]) -> None:
             st.write("Groq creates the first structured story from the evidence and peer/counterfactual context.")
             if breakdown.get("groq", {}).get("errors"):
                 st.error(str(breakdown.get("groq", {}).get("errors")))
-            st.json(groq_raw)
+            st.write(f"Executive summary: {groq_raw.get('executive_summary', 'No summary returned.')}")
+            st.write("Failure drivers Groq identified:")
+            for item in list(groq_raw.get("failure_drivers", []) or [])[:4]:
+                if isinstance(item, dict):
+                    citations = ", ".join(f"[{eid}]" for eid in list(item.get("evidence_ids", []) or [])) or "Evidence unavailable"
+                    st.write(f"- {item.get('driver', 'No driver returned.')} | {citations}")
+                else:
+                    st.write(f"- {item}")
+            st.write("Strategies Groq proposed:")
+            for item in list(groq_raw.get("survivor_strategies", []) or [])[:4]:
+                if isinstance(item, dict):
+                    citations = ", ".join(f"[{eid}]" for eid in list(item.get("evidence_ids", []) or [])) or "Evidence unavailable"
+                    st.write(f"- {item.get('strategy', 'No strategy returned.')} | {citations}")
+                else:
+                    st.write(f"- {item}")
     with exp2:
         with st.expander("watsonx Critique", expanded=True):
             st.write("watsonx acts as reviewer and challenges unsupported or weakly-supported claims.")
             if breakdown.get("watsonx", {}).get("errors"):
                 st.error(str(breakdown.get("watsonx", {}).get("errors")))
-            st.json(watsonx_raw)
+            st.write("Supported claims:")
+            supported = list(watsonx_raw.get("supported_claims", []) or [])
+            if supported:
+                for item in supported[:5]:
+                    st.write(f"- {item}")
+            else:
+                st.write("- None explicitly listed")
+            st.write("Unsupported claims:")
+            unsupported = list(watsonx_raw.get("unsupported_claims", []) or [])
+            if unsupported:
+                for item in unsupported[:5]:
+                    st.write(f"- {item}")
+            else:
+                st.write("- None")
+            st.write("Missing factors:")
+            for item in list(watsonx_raw.get("missing_factors", []) or [])[:5]:
+                st.write(f"- {item}")
+            st.write("Rewrite suggestions:")
+            for item in list(watsonx_raw.get("rewrite_suggestions", []) or [])[:5]:
+                st.write(f"- {item}")
     with exp3:
         with st.expander("Local Sanity Check", expanded=True):
             st.write("The local model checks whether the narrative is numerically consistent with the risk profile.")
             if breakdown.get("local", {}).get("errors"):
                 st.error(str(breakdown.get("local", {}).get("errors")))
-            st.json(local_raw)
+            st.write(f"- Failure probability: {float(local_raw.get('failure_probability', 0.0))*100:.1f}%")
+            st.write(f"- Counterfactual probability: {float(local_raw.get('counterfactual_probability', 0.0))*100:.1f}%")
+            st.write("Top numeric drivers:")
+            for item in list(local_raw.get("top_numeric_drivers", []) or [])[:4]:
+                st.write(f"- {item}")
+            st.write("Narrative alignment flags:")
+            for item in list(local_raw.get("narrative_alignment_flags", []) or [])[:5]:
+                st.write(f"- {item}")
 
     if local_raw:
         flags = list(local_raw.get("narrative_alignment_flags", []) or [])
@@ -2133,12 +2226,14 @@ def main() -> None:
             f"<div class='explain'>{reasoning.get('plain_english_explainer', 'No plain-English summary available.')}</div>",
             unsafe_allow_html=True,
         )
+        st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
 
         s1, s2, s3, s4 = st.columns(4)
         s1.metric("Failure Risk", f"{failing_risk_score:.2f}/100")
         s2.metric("Adjusted Risk", f"{float(simulation['adjusted_score']):.2f}/100")
         s3.metric("Risk Improvement", f"{float(simulation['improvement_percentage']):.2f}%")
         s4.metric("Local Analyst", f"{local_before.risk_probability*100:.1f}%")
+        st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
         st.caption(
             f"NLP distress intensity: {float(qual.get('distress_intensity', 0.0)):.1f}/10 "
             f"(confidence {float(qual.get('confidence', 0.0))*100:.0f}%)."
