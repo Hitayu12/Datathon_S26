@@ -80,6 +80,7 @@ class ModelBreakdownEntry:
     raw: Dict[str, Any] = field(default_factory=dict)
     latency_ms: int = 0
     errors: Optional[str] = None
+    signal_summary: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -160,6 +161,7 @@ def normalize_council_output(payload: Optional[Dict[str, Any]]) -> CouncilOutput
             raw=_safe_dict(breakdown_raw.get(key, {})).get("raw", {}),
             latency_ms=_coerce_int(_safe_dict(breakdown_raw.get(key, {})).get("latency_ms"), 0),
             errors=_safe_dict(breakdown_raw.get(key, {})).get("errors"),
+            signal_summary=_safe_dict(_safe_dict(breakdown_raw.get(key, {})).get("signal_summary")),
         )
         for key in ["groq", "watsonx", "local"]
     }

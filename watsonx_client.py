@@ -26,6 +26,58 @@ class WatsonxReasoningClient:
 
     _JSON_REPAIR_PROMPT = "Return ONLY valid JSON matching the schema. No commentary."
 
+    @staticmethod
+    def is_quota_error(message: str) -> bool:
+        text = str(message or "").lower()
+        return any(
+            marker in text
+            for marker in [
+                "token_quota_reached",
+                "quota was rejected",
+                "quota_reached",
+                "quota exceeded",
+                "http 403",
+                '"code":"token_quota_reached"',
+                "permission_error",
+            ]
+        )
+
+    @staticmethod
+    def summarize_error(message: str) -> str:
+        text = re.sub(r"\s+", " ", str(message or "")).strip()
+        if not text:
+            return "watsonx request failed."
+        if WatsonxReasoningClient.is_quota_error(text):
+            return "watsonx request blocked: token quota/permission limit reached (HTTP 403)."
+        lower = text.lower()
+        if "http 401" in lower or "unauthorized" in lower:
+            return "watsonx authentication failed (HTTP 401). Check IAM/API credentials."
+        if "redirected to" in lower:
+            return "watsonx URL appears incorrect. Use the raw `ml.cloud.ibm.com` host."
+        return text if len(text) <= 260 else f"{text[:257]}..."
+
+    @staticmethod
+    def _http_error_detail(response: requests.Response) -> str:
+        body = (response.text or "").strip()
+        if not body:
+            return f"HTTP {response.status_code}"
+        try:
+            parsed = response.json()
+        except ValueError:
+            compact = re.sub(r"\s+", " ", body)
+            return compact if len(compact) <= 220 else f"{compact[:217]}..."
+
+        if isinstance(parsed, dict):
+            code = str(parsed.get("code") or parsed.get("error_code") or "").strip()
+            msg = str(parsed.get("message") or parsed.get("error") or "").strip()
+            err_type = str(parsed.get("type") or "").strip()
+            detail_parts = [part for part in [code, err_type, msg] if part]
+            if detail_parts:
+                detail = " | ".join(detail_parts)
+                return detail if len(detail) <= 220 else f"{detail[:217]}..."
+        compact = re.sub(r"\s+", " ", body)
+        return compact if len(compact) <= 220 else f"{compact[:217]}..."
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -145,7 +197,7 @@ class WatsonxReasoningClient:
                     continue
 
                 if not response.ok:
-                    detail = response.text.strip() or f"HTTP {response.status_code}"
+                    detail = self._http_error_detail(response)
                     endpoint_errors.append(f"{endpoint}: HTTP {response.status_code}: {detail}")
                     continue
 
@@ -188,10 +240,8 @@ class WatsonxReasoningClient:
         if last_parse_error is not None:
             raise last_parse_error
         if endpoint_errors:
-            raise RuntimeError(
-                "watsonx chat completion request failed. "
-                + " | ".join(endpoint_errors[-3:])
-            )
+            error_text = "watsonx chat completion request failed. " + " | ".join(endpoint_errors[-3:])
+            raise RuntimeError(self.summarize_error(error_text))
         raise RuntimeError("watsonx returned an unreadable response.")
 
     def verify_failure_status(

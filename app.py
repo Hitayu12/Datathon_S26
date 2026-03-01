@@ -61,8 +61,27 @@ html,body,.stApp{background:#000000!important;color:var(--ink)!important;}
 [data-testid="stSidebar"] .stMarkdown p,[data-testid="stSidebar"] label,[data-testid="stSidebar"] span{color:var(--ink)!important;}
 [data-testid="stSidebar"] [data-baseweb="select"]{background:rgba(255,255,255,0.06)!important;border-color:rgba(255,255,255,0.12)!important;}
 [data-testid="stSidebar"] [data-baseweb="select"] span{color:var(--ink)!important;}
-div[data-baseweb="input"],div[data-baseweb="base-input"]{background:rgba(255,255,255,0.06)!important;border:1px solid rgba(255,255,255,0.12)!important;border-radius:10px!important;}
-div[data-baseweb="input"] input,div[data-baseweb="base-input"] input{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;caret-color:var(--accent)!important;}
+div[data-baseweb="input"],div[data-baseweb="base-input"]{
+    background:rgba(255,255,255,0.12)!important;
+    border:1px solid rgba(255,255,255,0.34)!important;
+    border-radius:10px!important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.05)!important;
+}
+div[data-baseweb="input"] input,div[data-baseweb="base-input"] input{
+    color:var(--ink)!important;
+    -webkit-text-fill-color:var(--ink)!important;
+    caret-color:var(--accent)!important;
+}
+div[data-baseweb="input"] input::placeholder,
+div[data-baseweb="base-input"] input::placeholder{
+    color:#d8dde3!important;
+    opacity:1!important;
+}
+div[data-baseweb="input"]:focus-within,
+div[data-baseweb="base-input"]:focus-within{
+    border:1px solid rgba(15,98,254,0.92)!important;
+    box-shadow:0 0 0 1px rgba(15,98,254,0.35)!important;
+}
 div[data-testid="stWidgetLabel"] p,div[data-testid="stWidgetLabel"] label,.stTextInput label,.stSlider label,.stSelectbox label,.stTextArea label{color:var(--muted)!important;font-weight:500!important;font-size:0.82rem!important;letter-spacing:0.03em!important;text-transform:uppercase!important;}
 div[data-testid="stMetric"]{background:var(--card)!important;border:1px solid var(--card-border)!important;border-radius:14px!important;padding:0.8rem 1rem!important;backdrop-filter:blur(8px);transition:transform 0.18s,border-color 0.18s;}
 div[data-testid="stMetric"]:hover{transform:translateY(-2px);border-color:rgba(15,98,254,0.4)!important;}
@@ -116,6 +135,26 @@ div[data-testid="stVerticalBlockBorderWrapper"]>div{border:1px solid var(--card-
 .wow{background:linear-gradient(135deg,rgba(15,98,254,0.1),rgba(20,184,166,0.08));border:1px solid rgba(15,98,254,0.25);border-radius:14px;padding:0.75rem 0.9rem;font-size:0.88rem;color:#82cfff;}
 .panel{background:var(--card);border:1px solid var(--card-border);border-radius:16px;padding:1rem 1.2rem;}
 .hint{border-bottom:1px dotted var(--accent);cursor:help;font-weight:600;color:#a5b4fc;}
+.st-key-glossary_panel .stButton>button{
+    background:rgba(15,98,254,0.12)!important;
+    border:1px solid rgba(130,207,255,0.35)!important;
+    color:#dbeafe!important;
+    box-shadow:none!important;
+    min-height:40px!important;
+    font-weight:700!important;
+}
+.st-key-glossary_panel .stButton>button:hover{
+    background:rgba(15,98,254,0.2)!important;
+    border-color:rgba(130,207,255,0.6)!important;
+    transform:none!important;
+}
+.glossary-card{
+    background:rgba(15,98,254,0.07);
+    border:1px solid rgba(130,207,255,0.28);
+    border-radius:12px;
+    padding:0.8rem 0.9rem;
+    margin-top:0.55rem;
+}
 .flow-grid{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:0.55rem;margin:0.6rem 0;}
 .flow-card{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:0.65rem 0.75rem;color:var(--ink);font-size:0.86rem;line-height:1.35;}
 .flow-card b{color:#a5b4fc;display:block;margin-bottom:0.2rem;}
@@ -135,6 +174,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]>div{border:1px solid var(--card-
 .st-key-jarvis_panel p,.st-key-jarvis_panel label,.st-key-jarvis_panel span,.st-key-jarvis_panel h1,.st-key-jarvis_panel h2,.st-key-jarvis_panel h3{color:#ffffff!important;}
 .st-key-jarvis_panel div[data-baseweb="input"],.st-key-jarvis_panel div[data-baseweb="base-input"]{background:rgba(255,255,255,0.06)!important;border:1px solid rgba(15,98,254,0.3)!important;border-radius:999px!important;min-height:44px!important;}
 .st-key-jarvis_panel div[data-baseweb="input"] input,.st-key-jarvis_panel div[data-baseweb="base-input"] input{color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;}
+.st-key-jarvis_panel div[data-baseweb="input"] input::placeholder,.st-key-jarvis_panel div[data-baseweb="base-input"] input::placeholder{color:#d0e2ff!important;opacity:1!important;}
 .st-key-jarvis_panel form{border:none!important;padding:0!important;margin:0!important;background:transparent!important;}
 .st-key-jarvis_panel .stButton>button{border-radius:999px!important;font-size:0.92rem!important;min-height:44px!important;width:100%!important;}
 .jarvis-title{color:#f8fafc!important;font-size:1.4rem;font-weight:800;line-height:1;}
@@ -142,27 +182,6 @@ div[data-testid="stVerticalBlockBorderWrapper"]>div{border:1px solid var(--card-
 .chat-bubble-ai{background:rgba(15,98,254,0.1);border:1px solid rgba(15,98,254,0.2);border-radius:14px 14px 14px 4px;padding:0.65rem 0.8rem;color:#e0e0e0;font-size:0.91rem;line-height:1.5;margin-bottom:0.4rem;}
 .chat-bubble-user{background:rgba(20,184,166,0.1);border:1px solid rgba(20,184,166,0.2);border-radius:14px 14px 4px 14px;padding:0.6rem 0.75rem;color:#ccfbf1;font-size:0.89rem;line-height:1.45;text-align:right;margin-bottom:0.4rem;}
 @media(max-width:640px){.st-key-jarvis_panel{right:10px;bottom:74px;width:calc(100vw - 20px);max-height:62vh;}.st-key-jarvis_trigger{right:10px;bottom:12px;}.flow-grid,.step-grid{grid-template-columns:1fr 1fr;}}
-/* ── Ensure Streamlit Icons Survive ── */
-.material-symbols-rounded, .material-symbols-outlined, .material-icons,
-span[class^="material-symbols"], span[class*=" material-symbols"],
-[data-testid="stExpanderToggleIcon"], [data-testid="stExpanderToggleIcon"] * {
-    font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
-    font-weight: normal !important;
-    font-style: normal !important;
-    font-size: 24px !important;
-    line-height: 1 !important;
-    letter-spacing: normal !important;
-    text-transform: none !important;
-    display: inline-block !important;
-    white-space: nowrap !important;
-    word-wrap: normal !important;
-    direction: ltr !important;
-    font-feature-settings: 'liga' !important;
-    -webkit-font-feature-settings: 'liga' !important;
-    -webkit-font-smoothing: antialiased !important;
-    color: var(--muted) !important;
-}
-
 /* ── AI Typing Animation ── */
 .typing-dots {
     display: inline-flex;
@@ -412,10 +431,18 @@ def _render_council_tab(council_output: Dict[str, Any]) -> None:
         for key, label in [("groq", "Groq LLM"), ("watsonx", "IBM watsonx.ai"), ("local", "Local NLP/Analyst")]:
             row = dict(breakdown.get(key, {}) or {})
             latency = int(row.get("latency_ms", 0) or 0)
-            errors = row.get("errors") or "None"
+            provider_name = "IBM watsonx.ai" if key == "watsonx" else ("Groq" if key == "groq" else "Local")
+            raw_error = row.get("errors")
+            errors = _normalize_provider_error(provider_name, raw_error) if raw_error else "None"
+            signal_summary = dict(row.get("signal_summary", {}) or {})
+            snippet_count = int(signal_summary.get("snippet_count", 0) or 0)
+            source_count = int(signal_summary.get("source_count", 0) or 0)
+            channels = ", ".join(list(signal_summary.get("channels", []) or [])[:5]) or "n/a"
             st.markdown(
                 f"<div class='council-model-badge'>🤖 {label}</div> "
-                f"<span style='color:var(--muted);font-size:0.82rem;'>Latency: {latency}ms | Errors: {errors}</span>",
+                f"<span style='color:var(--muted);font-size:0.82rem;'>"
+                f"Latency: {latency}ms | Signals: {snippet_count} snippets ({source_count} sourced) | "
+                f"Channels: {html.escape(channels)} | Errors: {html.escape(errors)}</span>",
                 unsafe_allow_html=True,
             )
 
@@ -482,6 +509,14 @@ def _render_council_trace_tab(council_output: Dict[str, Any], qual: Dict[str, An
 
     # ── Latency chart (Plotly) ────────────────────────────────────────────
     breakdown = dict(council_output.get("model_breakdown", {}) or {})
+    watson_row = dict(breakdown.get("watsonx", {}) or {})
+    watson_error = str(watson_row.get("errors") or "").strip()
+    if watson_error:
+        status_msg = "watsonx unavailable this run; Groq+Local kept the council running."
+        if _is_watson_quota_error(watson_error):
+            status_msg = "watsonx quota/permission is currently blocked; Groq+Local continued using the same sourced evidence."
+        st.info(status_msg)
+
     systems = ["Groq LLM", "IBM watsonx.ai", "Local NLP/Analyst"]
     latencies = [
         int((breakdown.get("groq", {}) or {}).get("latency_ms", 0) or 0),
@@ -520,10 +555,18 @@ def _render_council_trace_tab(council_output: Dict[str, Any], qual: Dict[str, An
     for key, label, accent in [("groq", "Groq LLM Draft", "#0f62fe"), ("watsonx", "watsonx Critique", "#0043ce"), ("local", "Local Sanity Check", "#14b8a6")]:
         row = dict(breakdown.get(key, {}) or {})
         raw = dict(row.get("raw", {}) or {})
-        errors = row.get("errors")
+        provider_name = "IBM watsonx.ai" if key == "watsonx" else ("Groq" if key == "groq" else "Local")
+        raw_error = row.get("errors")
+        errors = _normalize_provider_error(provider_name, raw_error) if raw_error else ""
+        signal_summary = dict(row.get("signal_summary", {}) or {})
         with st.expander(f"{label} — {'⚠ Error' if errors else '✓ OK'} ({int(row.get('latency_ms', 0) or 0)}ms)", expanded=False):
             if errors:
                 st.markdown(f"<div class='council-disagree'>Error: {html.escape(str(errors))}</div>", unsafe_allow_html=True)
+            st.caption(
+                f"Signals used: {int(signal_summary.get('snippet_count', 0) or 0)} snippets | "
+                f"Sourced links: {int(signal_summary.get('source_count', 0) or 0)} | "
+                f"Channels: {', '.join(list(signal_summary.get('channels', []) or [])[:6]) or 'n/a'}"
+            )
             if raw:
                 # Show readable fields instead of raw JSON
                 for field_key in ["executive_summary", "failure_drivers", "survivor_strategies",
@@ -639,6 +682,20 @@ def _enabled_provider_chain(
     return chain
 
 
+def _normalize_provider_error(provider_name: str, message: object) -> str:
+    raw = str(message or "").strip()
+    if not raw:
+        return "Unknown provider error."
+    if provider_name == "IBM watsonx.ai":
+        return WatsonxReasoningClient.summarize_error(raw)
+    compact = " ".join(raw.split())
+    return compact if len(compact) <= 260 else f"{compact[:257]}..."
+
+
+def _is_watson_quota_error(message: object) -> bool:
+    return WatsonxReasoningClient.is_quota_error(str(message or ""))
+
+
 def _invoke_with_provider_failover(
     *,
     provider_chain: List[Tuple[str, object]],
@@ -656,7 +713,8 @@ def _invoke_with_provider_failover(
         try:
             result = fn(**payload)
         except Exception as exc:
-            errors.append(f"{provider_name}: {type(exc).__name__}: {exc}")
+            normalized = _normalize_provider_error(provider_name, exc)
+            errors.append(f"{provider_name}: {type(exc).__name__}: {normalized}")
             continue
         if isinstance(result, dict) and bool(validator(result)):
             out = dict(result)
@@ -763,6 +821,117 @@ def _clean_metrics(metrics: Dict[str, object]) -> Dict[str, object]:
     return out
 
 
+def _format_signal_items(notes: List[object], *, max_items: int = 3) -> List[str]:
+    formatted: List[str] = []
+    for raw in list(notes or []):
+        text = " ".join(str(raw or "").split()).strip()
+        if not text:
+            continue
+        text = re.sub(r"^[\-\*\u2022\.\:;\s]+", "", text).strip()
+        text = re.sub(r"^(macro|micro|industry|news)\s*[:\-]\s*", "", text, flags=re.IGNORECASE).strip()
+        if text and text[-1] not in ".!?":
+            text = f"{text}."
+        formatted.append(text)
+        if len(formatted) >= max_items:
+            break
+
+    if not formatted:
+        return ["Signal 1: No strong signal captured from current sources."]
+    return [f"Signal {idx + 1}: {line}" for idx, line in enumerate(formatted)]
+
+
+def _layer_context_details(
+    *,
+    layer_key: str,
+    intelligence: Dict[str, object],
+    qual: Dict[str, object],
+    failing_metrics: Dict[str, Optional[float]],
+) -> Tuple[List[str], List[str], str]:
+    used_by = {
+        "macro": "Risk score (macro component) + layered diagnostics + council reasoning",
+        "business_model": "Layered diagnostics + council reasoning",
+        "financial_health": "Risk score core components + layered diagnostics + council reasoning",
+        "operational": "Layered diagnostics + council reasoning",
+        "qualitative": "Local NLP distress model + layered diagnostics + council reasoning",
+    }
+
+    if layer_key == "macro":
+        channels = ["Macro", "News"]
+        evidence = _format_signal_items(
+            list(intelligence.get("macro_notes", []) or []) + list(intelligence.get("news_notes", []) or []),
+            max_items=2,
+        )
+        return channels, evidence, used_by[layer_key]
+
+    if layer_key == "business_model":
+        channels = ["Micro", "Industry", "News"]
+        evidence = _format_signal_items(
+            list(intelligence.get("micro_notes", []) or []) + list(intelligence.get("industry_notes", []) or []),
+            max_items=2,
+        )
+        return channels, evidence, used_by[layer_key]
+
+    if layer_key == "financial_health":
+        channels = ["Financial Metrics", "Micro"]
+        evidence: List[str] = []
+        dte = failing_metrics.get("debt_to_equity")
+        cr = failing_metrics.get("current_ratio")
+        burn = failing_metrics.get("cash_burn")
+        rev = failing_metrics.get("revenue")
+        if dte is not None:
+            evidence.append(f"Signal 1: Debt / Equity observed at {float(dte):.2f}.")
+        if cr is not None:
+            evidence.append(f"Signal {len(evidence)+1}: Current ratio observed at {float(cr):.2f}.")
+        if burn is not None and rev not in (None, 0):
+            burn_ratio = abs(float(burn)) / max(abs(float(rev)), 1.0)
+            evidence.append(f"Signal {len(evidence)+1}: Cash burn intensity at {burn_ratio*100:.1f}% of revenue.")
+        if not evidence:
+            evidence = _format_signal_items(list(intelligence.get("micro_notes", []) or []), max_items=2)
+        return channels, evidence[:2], used_by[layer_key]
+
+    if layer_key == "operational":
+        channels = ["Financial Metrics", "Industry", "News"]
+        evidence = []
+        exp_growth = failing_metrics.get("expense_growth")
+        rev_growth = failing_metrics.get("revenue_growth")
+        op_margin = failing_metrics.get("operating_margin")
+        inv_growth = failing_metrics.get("inventory_growth")
+        if exp_growth is not None and rev_growth is not None:
+            evidence.append(
+                f"Signal 1: Expense growth ({float(exp_growth):.2f}) vs revenue growth ({float(rev_growth):.2f})."
+            )
+        if op_margin is not None:
+            evidence.append(f"Signal {len(evidence)+1}: Operating margin observed at {float(op_margin):.2f}.")
+        if inv_growth is not None:
+            evidence.append(f"Signal {len(evidence)+1}: Inventory growth observed at {float(inv_growth):.2f}.")
+        if not evidence:
+            evidence = _format_signal_items(
+                list(intelligence.get("industry_notes", []) or []) + list(intelligence.get("news_notes", []) or []),
+                max_items=2,
+            )
+        return channels, evidence[:2], used_by[layer_key]
+
+    # qualitative
+    channels = ["Qualitative NLP", "Micro", "News"]
+    theme_evidence = dict(qual.get("theme_evidence", {}) or {})
+    snippets: List[str] = []
+    for _, values in theme_evidence.items():
+        for item in list(values or [])[:1]:
+            text = " ".join(str(item or "").split()).strip()
+            if text:
+                snippets.append(text)
+        if len(snippets) >= 2:
+            break
+    if snippets:
+        evidence = [f"Signal {idx+1}: {txt if txt.endswith(('.', '!', '?')) else txt + '.'}" for idx, txt in enumerate(snippets[:2])]
+    else:
+        evidence = _format_signal_items(
+            list(intelligence.get("news_notes", []) or []) + list(intelligence.get("micro_notes", []) or []),
+            max_items=2,
+        )
+    return channels, evidence[:2], used_by["qualitative"]
+
+
 def _coerce_claim_text(item: Any, preferred_keys: List[str]) -> str:
     payload: Dict[str, Any] = {}
     if isinstance(item, dict):
@@ -829,6 +998,20 @@ def _metrics_table(metrics: Dict[str, object], hide_missing: bool = False) -> pd
             continue
         rows.append({"Metric": _friendly_metric_name(k), "Value": _fmt_num(v)})
     return pd.DataFrame(rows)
+
+
+def _aligned_metric_tables(
+    failing_metrics: Dict[str, object],
+    survivor_metrics: Dict[str, object],
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    # Keep a strict 1:1 comparison: only metrics present (non-null) for failing company are shown.
+    ordered_keys = [k for k, v in failing_metrics.items() if v is not None]
+    fail_rows: List[Dict[str, str]] = []
+    surv_rows: List[Dict[str, str]] = []
+    for key in ordered_keys:
+        fail_rows.append({"Metric": _friendly_metric_name(key), "Value": _fmt_num(failing_metrics.get(key))})
+        surv_rows.append({"Metric": _friendly_metric_name(key), "Value": _fmt_num(survivor_metrics.get(key))})
+    return pd.DataFrame(fail_rows), pd.DataFrame(surv_rows)
 
 
 def _core_metric_quality(metrics: Dict[str, Optional[float]]) -> int:
@@ -1076,24 +1259,7 @@ def _chart_layer_stress_heatmap(
     intelligence: Dict[str, object],
     qual: Dict[str, object],
 ) -> alt.Chart:
-    layer_titles = {
-        "macro": "Macro",
-        "business_model": "Business",
-        "financial_health": "Financial",
-        "operational": "Operational",
-        "qualitative": "Qualitative",
-    }
-
-    rows = []
-    for key, title in layer_titles.items():
-        signal_count = len(list(layers.get(key, {}).get("signals", []) or []))
-        score = float(signal_count)
-        if key == "macro":
-            score += float(intelligence.get("macro_stress_score", 0.0)) / 38.0
-        if key == "qualitative":
-            score += float(qual.get("distress_intensity", 0.0)) / 2.8
-        rows.append({"Layer": title, "Stress Score": round(score, 3), "Signals": signal_count})
-
+    rows = _layer_stress_rows(layers, intelligence, qual)
     df = pd.DataFrame(rows)
     return (
         alt.Chart(df)
@@ -1113,6 +1279,55 @@ def _chart_layer_stress_heatmap(
         .configure_legend(labelColor="#94a3b8", titleColor="#94a3b8")
         .configure(background="rgba(0,0,0,0)")
     )
+
+
+def _layer_stress_rows(
+    layers: Dict[str, Dict[str, object]],
+    intelligence: Dict[str, object],
+    qual: Dict[str, object],
+) -> List[Dict[str, object]]:
+    def _coerce_score(raw: object) -> Optional[float]:
+        try:
+            val = float(raw)
+        except (TypeError, ValueError):
+            return None
+        if val < 0:
+            return 0.0
+        # Support both 0-1 and 0-100 style inputs.
+        if val > 1.5 and val <= 100:
+            return max(0.0, min(1.0, val / 100.0))
+        return max(0.0, min(1.0, val))
+
+    layer_titles = {
+        "macro": "Macro",
+        "business_model": "Business",
+        "financial_health": "Financial",
+        "operational": "Operational",
+        "qualitative": "Qualitative",
+    }
+    macro_norm = max(0.0, min(1.0, float(intelligence.get("macro_stress_score", 0.0) or 0.0) / 100.0))
+    qual_norm = max(0.0, min(1.0, float(qual.get("distress_intensity", 0.0) or 0.0) / 10.0))
+    rows: List[Dict[str, object]] = []
+    for key, title in layer_titles.items():
+        layer_payload = dict(layers.get(key, {}) or {})
+        signal_items = [str(x).strip() for x in list(layer_payload.get("signals", []) or []) if str(x).strip()]
+        signal_count = len(signal_items)
+        explicit = _coerce_score(layer_payload.get("score"))
+        # Fallback from signal density when no explicit score exists.
+        score = explicit if explicit is not None else min(1.0, signal_count * 0.30)
+        if key == "macro":
+            score = max(score, macro_norm)
+        if key == "qualitative":
+            score = max(score, qual_norm)
+        rows.append(
+            {
+                "Layer": title,
+                "Stress Score": round(max(0.0, min(1.0, score)), 3),
+                "Signals": signal_count,
+                "Signal Details": " | ".join(signal_items[:3]) if signal_items else "No strong signal",
+            }
+        )
+    return rows
 
 
 def _chart_risk_contribution(components: Dict[str, float]) -> go.Figure:
@@ -1335,11 +1550,26 @@ def _glossary() -> Dict[str, str]:
 
 def _render_glossary_panel() -> None:
     glossary = _glossary()
-    st.markdown("#### Hover Glossary")
+    st.markdown("#### Glossary")
+    st.caption("Click a term to see what it means.")
+
+    terms = list(glossary.keys())
+    if "glossary_selected" not in st.session_state or st.session_state["glossary_selected"] not in glossary:
+        st.session_state["glossary_selected"] = terms[0]
+
+    with st.container(key="glossary_panel"):
+        row_size = 3
+        for start in range(0, len(terms), row_size):
+            row_terms = terms[start:start + row_size]
+            cols = st.columns(len(row_terms))
+            for col, term in zip(cols, row_terms):
+                if col.button(term, key=f"glossary_btn_{term}", use_container_width=True, type="secondary"):
+                    st.session_state["glossary_selected"] = term
+
+    selected = str(st.session_state.get("glossary_selected", terms[0]))
+    description = glossary.get(selected, "")
     st.markdown(
-        " ".join(
-            [f"<span class='hint' title='{desc}'>{term}</span>" for term, desc in glossary.items()]
-        ),
+        f"<div class='glossary-card'><strong>{html.escape(selected)}</strong><br/>{html.escape(description)}</div>",
         unsafe_allow_html=True,
     )
 
@@ -1464,6 +1694,13 @@ def _chat_bubble(text: str, role: str) -> str:
         return f"<div class='chat-bubble-ai'>🤖 {safe}</div>"
     return f"<div class='chat-bubble-user'>{safe}</div>"
 
+
+def _is_typing_message(msg: Dict[str, object]) -> bool:
+    if str(msg.get("role", "")) != "assistant":
+        return False
+    text = str(msg.get("text", "") or "")
+    return "<div class='typing-dots'>" in text or text.strip().lower() == "typing..."
+
 def _strengthen_reasoning(
     reasoning: Dict[str, object],
     *,
@@ -1567,6 +1804,57 @@ def _compose_failure_narrative(
     )
 
 
+def _compose_prevention_narrative(
+    *,
+    company_name: str,
+    industry: str,
+    reasoning: Dict[str, object],
+    failing_metrics: Dict[str, Optional[float]],
+    comparison: Dict[str, object],
+    simulation: Dict[str, object],
+    intelligence: Dict[str, object],
+) -> str:
+    survivor_avg = comparison.get("survivor_average_metrics", {}) or {}
+    actions = [str(x).strip() for x in list(reasoning.get("prevention_measures", []) or []) if str(x).strip()]
+
+    cr_now = float(failing_metrics.get("current_ratio") or 0.0)
+    cr_target = float(survivor_avg.get("current_ratio") or max(1.2, cr_now))
+    de_now = float(failing_metrics.get("debt_to_equity") or 0.0)
+    de_target = float(survivor_avg.get("debt_to_equity") or max(1.2, de_now * 0.6 if de_now > 0 else 1.2))
+    burn_now = abs(float(failing_metrics.get("cash_burn") or 0.0))
+    burn_target = abs(float(survivor_avg.get("cash_burn") or burn_now * 0.45))
+    rev_now = float(failing_metrics.get("revenue_growth") or 0.0)
+    rev_target = float(survivor_avg.get("revenue_growth") or max(0.03, rev_now))
+    before = float(simulation.get("original_score", simulation.get("baseline_score", 0.0)) or 0.0)
+    after = float(simulation.get("adjusted_score", before) or before)
+    improvement = float(simulation.get("improvement_percentage", 0.0) or 0.0)
+
+    macro_signal = _first_note(
+        list(intelligence.get("macro_notes", []) or []),
+        "Macro conditions stayed tight, so liquidity and refinancing flexibility mattered most.",
+    )
+    industry_signal = _first_note(
+        list(intelligence.get("industry_notes", []) or []),
+        f"{industry} competition and pricing pressure required earlier cost discipline.",
+    )
+
+    a1 = actions[0] if len(actions) > 0 else f"build liquidity buffer from {cr_now:.2f} toward {cr_target:.2f}"
+    a2 = actions[1] if len(actions) > 1 else f"reduce leverage from debt/equity {de_now:.2f} toward {de_target:.2f}"
+    a3 = actions[2] if len(actions) > 2 else "stabilize revenue mix while reducing fixed-cost intensity"
+
+    paragraph = (
+        f"{company_name} could likely have avoided collapse with an earlier three-step prevention sequence. "
+        f"First, {a1}, because short-term liquidity is the fastest control lever when markets tighten. "
+        f"Second, {a2} and lower structural burn (about {burn_now:,.0f} toward {burn_target:,.0f}) to reduce refinancing risk and preserve runway. "
+        f"Third, {a3}, targeting revenue growth recovery from {rev_now*100:.1f}% toward {rev_target*100:.1f}% so operating cash flow can normalize. "
+        f"The counterfactual simulation supports this path: modeled risk drops from {before:.1f} to {after:.1f} ({improvement:.1f}% improvement). "
+        f"Macro signal: {macro_signal} Industry signal: {industry_signal}"
+    )
+    paragraph = _humanize_gap_terms(paragraph)
+    paragraph = re.sub(r"[ \t]+", " ", paragraph).strip()
+    return paragraph
+
+
 def _build_analyst_deep_dive(
     *,
     profile_name: str,
@@ -1658,12 +1946,14 @@ def _build_report_bundle(
     qual_summary: Optional[Dict[str, Any]] = None,
     failure_narrative: str = "",
     analyst_deep_dive: str = "",
+    prevention_narrative: str = "",
 ) -> Tuple[str, str]:
     payload = {
         "generated_at": datetime.utcnow().isoformat() + "Z",
         "company": {"name": profile_name, "ticker": ticker, "failed": failed},
         "summary": reasoning,
         "failure_narrative": failure_narrative,
+        "prevention_narrative": prevention_narrative,
         "analyst_deep_dive": analyst_deep_dive,
         "scores": {
             "failing_risk_score": failing_risk_score,
@@ -1708,6 +1998,8 @@ def _build_report_bundle(
     md.extend(["", "## Prevention Moves"])
     for item in reasoning.get("prevention_measures", [])[:3]:
         md.append(f"- {item}")
+    if prevention_narrative:
+        md.extend(["", prevention_narrative])
     md.extend(
         [
             "",
@@ -1821,8 +2113,6 @@ def main() -> None:
         st.session_state["assistant_pending_question"] = None
     if "assistant_waiting" not in st.session_state:
         st.session_state["assistant_waiting"] = False
-    if "assistant_compact" not in st.session_state:
-        st.session_state["assistant_compact"] = False
     if "analysis_cache" not in st.session_state:
         st.session_state["analysis_cache"] = None
     if "llm_test_result" not in st.session_state:
@@ -1902,7 +2192,12 @@ def main() -> None:
                 ok, message = _test_llm_connection(test_client, test_provider)
                 st.session_state["llm_test_result"] = {"ok": ok, "message": message}
             except Exception as exc:
-                st.session_state["llm_test_result"] = {"ok": False, "message": str(exc)}
+                normalized = _normalize_provider_error(test_provider, exc)
+                if test_provider == "IBM watsonx.ai" and _is_watson_quota_error(exc):
+                    normalized = (
+                        f"{normalized} This run will fall back to Groq+Local until Watson quota is restored."
+                    )
+                st.session_state["llm_test_result"] = {"ok": False, "message": normalized}
 
         llm_test_result = st.session_state.get("llm_test_result")
         if isinstance(llm_test_result, dict):
@@ -1939,7 +2234,6 @@ def main() -> None:
         ]
         st.session_state["assistant_pending_question"] = None
         st.session_state["assistant_waiting"] = False
-        st.session_state["assistant_compact"] = False
 
     if not st.session_state.get("analysis_active", False):
         return
@@ -2225,11 +2519,34 @@ def main() -> None:
         st.session_state["analysis_active"] = False
         return
 
+    if reasoning_mode == "Collaborative Council (recommended)" and council_output:
+        wx_error = str((((council_output.get("model_breakdown", {}) or {}).get("watsonx", {}) or {}).get("errors") or "").strip())
+        if wx_error:
+            if _is_watson_quota_error(wx_error):
+                st.info(
+                    "IBM watsonx.ai is configured, but quota/permission is currently blocked. "
+                    "This run automatically used Groq + Local with the same Tavily signal bundle."
+                )
+            else:
+                st.warning(
+                    "IBM watsonx.ai was temporarily unavailable in this run. "
+                    "The council automatically continued with Groq + Local."
+                )
+
     failure_narrative = _compose_failure_narrative(
         company_name=profile.name,
         industry=profile.industry,
         reasoning=reasoning,
         layers=layers,
+        intelligence=intelligence,
+    )
+    prevention_narrative = _compose_prevention_narrative(
+        company_name=profile.name,
+        industry=profile.industry,
+        reasoning=reasoning,
+        failing_metrics=failing_metrics,
+        comparison=comparison,
+        simulation=simulation,
         intelligence=intelligence,
     )
     analyst_deep_dive = _build_analyst_deep_dive(
@@ -2258,6 +2575,7 @@ def main() -> None:
         qual,
         failure_narrative,
         analyst_deep_dive,
+        prevention_narrative,
     )
 
     st.markdown("---")
@@ -2361,16 +2679,13 @@ def main() -> None:
         ]
         for col, (title, notes) in zip(sig_cols, signal_groups):
             col.markdown(f"**{title}**")
-            lines = [str(x).strip() for x in list(notes or []) if str(x).strip()]
-            if not lines:
-                col.write("- No signal captured")
-            else:
-                for line in lines[:2]:
-                    col.write(f"- {line}")
+            for line in _format_signal_items(list(notes or []), max_items=2):
+                col.write(f"- {line}")
 
         st.markdown("#### How It Could Have Been Prevented")
         for item in reasoning.get("prevention_measures", [])[:3]:
             st.write(f"- {item}")
+        st.markdown(f"<div class='explain'>{html.escape(prevention_narrative)}</div>", unsafe_allow_html=True)
 
     with tabs[1]:
         a1, a2, a3, a4 = st.columns(4)
@@ -2405,8 +2720,10 @@ def main() -> None:
 
         st.markdown("#### Core Metrics")
         t1, t2 = st.columns(2)
-        fail_table = _metrics_table(_clean_metrics(failing_metrics), hide_missing=True)
-        survivor_table = _metrics_table(_clean_metrics(comparison["survivor_average_metrics"]), hide_missing=True)
+        fail_table, survivor_table = _aligned_metric_tables(
+            _clean_metrics(failing_metrics),
+            _clean_metrics(comparison["survivor_average_metrics"]),
+        )
         with t1:
             st.write("Failing Company")
             if fail_table.empty:
@@ -2433,9 +2750,11 @@ def main() -> None:
         # Plotly heatmap for layer stress
         import plotly.graph_objects as go
         import plotly.express as px
-        _layer_names = ["Macro", "Business", "Financial", "Operational", "Qualitative"]
-        _layer_keys = ["macro", "business_model", "financial_health", "operational", "qualitative"]
-        _layer_scores = [float((layers.get(k, {}) or {}).get("score", 0.0)) for k in _layer_keys]
+        _layer_rows = _layer_stress_rows(layers, intelligence, qual)
+        _layer_names = [str(r.get("Layer", "")) for r in _layer_rows]
+        _layer_scores = [float(r.get("Stress Score", 0.0) or 0.0) for r in _layer_rows]
+        _layer_signals = [str(r.get("Signal Details", "No strong signal")) for r in _layer_rows]
+        _layer_counts = [int(r.get("Signals", 0) or 0) for r in _layer_rows]
         _hm_fig = go.Figure(go.Bar(
             x=_layer_names, y=_layer_scores,
             marker=dict(
@@ -2446,7 +2765,8 @@ def main() -> None:
             ),
             text=[f"{s:.2f}" for s in _layer_scores], textposition="outside",
             textfont=dict(color="#f4f4f4", size=13, family="Inter"),
-            hovertemplate="<b>%{x}</b><br>Stress Score: %{y:.2f}<extra></extra>",
+            customdata=list(zip(_layer_counts, _layer_signals)),
+            hovertemplate="<b>%{x}</b><br>Stress Score: %{y:.2f}<br>Signal count: %{customdata[0]}<br>Signals: %{customdata[1]}<extra></extra>",
         ))
         _hm_fig.update_layout(
             plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
@@ -2512,17 +2832,35 @@ def main() -> None:
         st.write(str(qual.get("forensic_summary", "")))
 
         st.markdown("#### Layered Signals")
+        total_layer_signals = sum(len(list((layers.get(k, {}) or {}).get("signals", []) or [])) for k in ["macro", "business_model", "financial_health", "operational", "qualitative"])
+        st.caption(
+            f"{total_layer_signals} explicit layer signals were used in the model pipeline "
+            "(risk scoring + layered diagnostics + council reasoning)."
+        )
         lcols = st.columns(5)
         names = ["macro", "business_model", "financial_health", "operational", "qualitative"]
         titles = ["Macro", "Business", "Financial", "Operational", "Qualitative"]
+        stress_rows = _layer_stress_rows(layers, intelligence, qual)
+        stress_lookup = {str(r.get("Layer", "")): float(r.get("Stress Score", 0.0) or 0.0) for r in stress_rows}
         for i, key in enumerate(names):
             lcols[i].markdown(f"**{titles[i]}**")
+            lcols[i].caption(f"Stress: {stress_lookup.get(titles[i], 0.0):.2f}")
+            channels, evidence_lines, used_text = _layer_context_details(
+                layer_key=key,
+                intelligence=intelligence,
+                qual=qual,
+                failing_metrics=failing_metrics,
+            )
+            lcols[i].write(f"- Used in: {used_text}")
+            lcols[i].write(f"- Source channels: {', '.join(channels)}")
             signals = list(layers.get(key, {}).get("signals", []))
             if not signals:
                 lcols[i].write("- No strong signal")
             else:
                 for s in signals[:3]:
                     lcols[i].write(f"- {s}")
+            for ev in evidence_lines[:2]:
+                lcols[i].write(f"- {ev}")
 
         if used_failed_imputation:
             st.info("Some failed-company metrics were estimated due limited filing availability for this symbol.")
@@ -2657,16 +2995,16 @@ def main() -> None:
 
         st.markdown("### Macro / Micro / Industry / News Signals")
         st.write("**Macro**")
-        for line in list(intelligence.get("macro_notes", []) or [])[:3]:
+        for line in _format_signal_items(list(intelligence.get("macro_notes", []) or []), max_items=3):
             st.write(f"- {line}")
         st.write("**Micro (Company-Specific)**")
-        for line in list(intelligence.get("micro_notes", []) or [])[:3]:
+        for line in _format_signal_items(list(intelligence.get("micro_notes", []) or []), max_items=3):
             st.write(f"- {line}")
         st.write("**Industry Knowledge**")
-        for line in list(intelligence.get("industry_notes", []) or [])[:3]:
+        for line in _format_signal_items(list(intelligence.get("industry_notes", []) or []), max_items=3):
             st.write(f"- {line}")
         st.write("**News Timeline Signals**")
-        for line in list(intelligence.get("news_notes", []) or [])[:3]:
+        for line in _format_signal_items(list(intelligence.get("news_notes", []) or []), max_items=3):
             st.write(f"- {line}")
 
         st.markdown("### NLP Evidence Digest")
@@ -2720,15 +3058,11 @@ def main() -> None:
                 st.session_state["assistant_open"] = True
                 st.rerun()
     else:
-        _inject_assistant_panel_mode_style(bool(st.session_state.get("assistant_compact", False)))
+        _inject_assistant_panel_mode_style(False)
         with st.container(key="jarvis_panel"):
-            hdr_left, hdr_mid, hdr_right = st.columns([3.8, 1.4, 1.2])
+            hdr_left, hdr_right = st.columns([5.2, 1.2])
             hdr_left.markdown("<div class='jarvis-title'>SignalForge AI</div>", unsafe_allow_html=True)
             hdr_left.markdown("<div class='jarvis-sub'>Personal AI for this report</div>", unsafe_allow_html=True)
-            mode_label = "Expand" if st.session_state.get("assistant_compact", False) else "Compact"
-            if hdr_mid.button(mode_label, key="jarvis_resize_btn", type="secondary", use_container_width=True):
-                st.session_state["assistant_compact"] = not bool(st.session_state.get("assistant_compact", False))
-                st.rerun()
             if hdr_right.button("✕", key="jarvis_close_btn", type="secondary", use_container_width=True):
                 st.session_state["assistant_open"] = False
                 st.rerun()
@@ -2835,9 +3169,15 @@ When answering, always:
                     except Exception:
                         answer_text = "I could not complete that request right now. Please try again."
 
-                msgs = st.session_state.get("assistant_messages", [])
-                if msgs and msgs[-1].get("role") == "assistant" and msgs[-1].get("text") == "Typing...":
-                    msgs[-1] = {"role": "assistant", "text": answer_text}
+                msgs = list(st.session_state.get("assistant_messages", []) or [])
+                typing_idx: Optional[int] = None
+                for idx in range(len(msgs) - 1, -1, -1):
+                    if _is_typing_message(dict(msgs[idx] or {})):
+                        typing_idx = idx
+                        break
+                if typing_idx is not None:
+                    msgs[typing_idx] = {"role": "assistant", "text": answer_text}
+                    msgs = [m for j, m in enumerate(msgs) if j == typing_idx or not _is_typing_message(dict(m or {}))]
                 else:
                     msgs.append({"role": "assistant", "text": answer_text})
                 st.session_state["assistant_messages"] = msgs
@@ -2847,9 +3187,14 @@ When answering, always:
 
     if reasoning_mode == "Collaborative Council (recommended)":
         caption_model = active_model_name
+        workflow_line = "Workflow: Groq draft -> watsonx critique/synthesis -> Local NLP/Analyst sanity check"
+        if council_output:
+            wx_error = str((((council_output.get("model_breakdown", {}) or {}).get("watsonx", {}) or {}).get("errors") or "").strip())
+            if wx_error:
+                workflow_line = "Workflow: Groq draft -> Local sanity + Groq synthesis fallback (watsonx unavailable this run)"
         st.caption(
             f"Reasoning mode: {reasoning_mode} | Systems: {caption_model} | "
-            f"Workflow: Groq draft -> watsonx critique/synthesis -> Local NLP/Analyst sanity check | "
+            f"{workflow_line} | "
             f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         )
     else:

@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from local_reasoner import LocalAnalystModel
 from schemas import normalize_council_output
+from watsonx_client import WatsonxReasoningClient
 
 _CACHE_LOCK = threading.Lock()
 _COUNCIL_CACHE: Dict[str, Dict[str, Any]] = {}
@@ -38,6 +39,33 @@ def _with_timing(fn, *args, **kwargs) -> Tuple[Optional[Dict[str, Any]], int, Op
     except Exception as exc:
         latency_ms = int((time.perf_counter() - started) * 1000)
         return None, latency_ms, str(exc)
+
+
+def _normalize_error(provider: str, error: Optional[str]) -> Optional[str]:
+    if not error:
+        return None
+    text = str(error).strip()
+    if not text:
+        return None
+    if provider == "watsonx":
+        return WatsonxReasoningClient.summarize_error(text)
+    compact = " ".join(text.split())
+    return compact if len(compact) <= 260 else f"{compact[:257]}..."
+
+
+def _is_watsonx_quota_error(error: Optional[str]) -> bool:
+    return WatsonxReasoningClient.is_quota_error(str(error or ""))
+
+
+def _summarize_signal_inputs(evidence_bundle: Dict[str, Any]) -> Dict[str, Any]:
+    snippets = list((evidence_bundle or {}).get("snippets", []) or [])
+    channels = sorted({str((row or {}).get("label", "")).strip() for row in snippets if str((row or {}).get("label", "")).strip()})
+    source_count = sum(1 for row in snippets if str((row or {}).get("source", "")).strip())
+    return {
+        "snippet_count": len(snippets),
+        "source_count": source_count,
+        "channels": channels,
+    }
 
 
 def _ensure_evidence_ids(items: List[Any], available_ids: List[int]) -> List[Dict[str, Any]]:
@@ -143,6 +171,8 @@ def _build_consensus_fallback(
     local_error: Optional[str],
     local_latency_ms: int,
 ) -> Dict[str, Any]:
+    signal_summary = _summarize_signal_inputs(inputs.get("evidence_bundle", {}) or {})
+
     def _extract_claim_payload(
         row: Any,
         *,
@@ -246,10 +276,11 @@ def _build_consensus_fallback(
         ],
         "overall_confidence": 0.3,
         "model_breakdown": {
-            "groq": {"raw": groq_raw or {}, "latency_ms": groq_latency_ms, "errors": groq_error},
-            "watsonx": {"raw": watsonx_raw or {}, "latency_ms": watsonx_latency_ms, "errors": watsonx_error},
-            "local": {"raw": local_raw or {}, "latency_ms": local_latency_ms, "errors": local_error},
+            "groq": {"raw": groq_raw or {}, "latency_ms": groq_latency_ms, "errors": groq_error, "signal_summary": signal_summary},
+            "watsonx": {"raw": watsonx_raw or {}, "latency_ms": watsonx_latency_ms, "errors": watsonx_error, "signal_summary": signal_summary},
+            "local": {"raw": local_raw or {}, "latency_ms": local_latency_ms, "errors": local_error, "signal_summary": signal_summary},
         },
+        "signal_summary": signal_summary,
     }
 
     if not fallback["failure_drivers"]:
@@ -278,6 +309,7 @@ def run_reasoning_council(inputs: Dict[str, Any]) -> Dict[str, Any]:
     evidence_bundle = inputs.get("evidence_bundle", {}) or {}
     evidence_items = list(evidence_bundle.get("snippets", []) or [])
     evidence_ids = [int(item.get("id")) for item in evidence_items if str(item.get("id", "")).isdigit()]
+    signal_summary = _summarize_signal_inputs(evidence_bundle)
 
     groq_client = inputs.get("groq_client")
     watsonx_client = inputs.get("watsonx_client")
@@ -298,6 +330,7 @@ def run_reasoning_council(inputs: Dict[str, Any]) -> Dict[str, Any]:
     groq_error: Optional[str] = None
     if groq_client is not None:
         groq_raw, groq_latency_ms, groq_error = _with_timing(groq_client.generate_council_draft, **draft_inputs)
+        groq_error = _normalize_error("groq", groq_error)
     if groq_raw is None:
         groq_raw = _fallback_draft(inputs)
 
@@ -320,8 +353,10 @@ def run_reasoning_council(inputs: Dict[str, Any]) -> Dict[str, Any]:
         watsonx_error: Optional[str] = None
         if critique_future is not None:
             watsonx_raw, watsonx_latency_ms, watsonx_error = critique_future.result(timeout=60)
+            watsonx_error = _normalize_error("watsonx", watsonx_error)
 
         local_raw, local_latency_ms, local_error = local_future.result(timeout=60)
+        local_error = _normalize_error("local", local_error)
 
     synthesis_provider = inputs.get("synthesis_provider", "watsonx")
     synthesis_client = watsonx_client if synthesis_provider == "watsonx" and watsonx_client is not None else groq_client
@@ -343,6 +378,7 @@ def run_reasoning_council(inputs: Dict[str, Any]) -> Dict[str, Any]:
             watsonx_critique=watsonx_raw or {},
             local_sanity_check=local_raw or {},
         )
+        synthesis_error = _normalize_error("watsonx" if synthesis_provider == "watsonx" else "groq", synthesis_error)
         if synthesis_error:
             if synthesis_provider == "watsonx":
                 watsonx_error = synthesis_error
@@ -350,6 +386,39 @@ def run_reasoning_council(inputs: Dict[str, Any]) -> Dict[str, Any]:
             else:
                 groq_error = synthesis_error
                 groq_latency_ms = max(groq_latency_ms, synthesis_latency_ms)
+
+    # If watsonx synthesis is blocked (quota/permission/transient issue), retry synthesis with Groq.
+    if (
+        final_raw is None
+        and synthesis_provider == "watsonx"
+        and watsonx_client is not None
+        and groq_client is not None
+    ):
+        retry_raw, retry_latency_ms, retry_error = _with_timing(
+            groq_client.synthesize_council_output,
+            company_profile=inputs.get("company_profile", {}) or {},
+            metrics=inputs.get("metrics", {}) or {},
+            peer_summary=inputs.get("peer_summary", {}) or {},
+            evidence_bundle=evidence_bundle,
+            groq_draft=groq_raw,
+            watsonx_critique=watsonx_raw or {},
+            local_sanity_check=local_raw or {},
+        )
+        retry_error = _normalize_error("groq", retry_error)
+        groq_latency_ms = max(groq_latency_ms, retry_latency_ms)
+        if retry_raw is not None:
+            final_raw = retry_raw
+            if watsonx_error:
+                fallback_note = (
+                    "watsonx quota/permission blocked; synthesis automatically failed over to Groq."
+                    if _is_watsonx_quota_error(watsonx_error)
+                    else "watsonx synthesis failed; synthesis automatically failed over to Groq."
+                )
+                watsonx_error = f"{watsonx_error} | {fallback_note}"
+            else:
+                watsonx_error = "watsonx synthesis unavailable; synthesis automatically failed over to Groq."
+        elif retry_error:
+            groq_error = retry_error if not groq_error else f"{groq_error} | {retry_error}"
 
     if final_raw is None:
         final_raw = _build_consensus_fallback(
@@ -380,10 +449,11 @@ def run_reasoning_council(inputs: Dict[str, Any]) -> Dict[str, Any]:
         disagreement_count=len(list(final_raw.get("disagreements", []) or [])),
     )
     final_raw["model_breakdown"] = {
-        "groq": {"raw": groq_raw or {}, "latency_ms": groq_latency_ms, "errors": groq_error},
-        "watsonx": {"raw": watsonx_raw or {}, "latency_ms": watsonx_latency_ms, "errors": watsonx_error},
-        "local": {"raw": local_raw or {}, "latency_ms": local_latency_ms, "errors": local_error},
+        "groq": {"raw": groq_raw or {}, "latency_ms": groq_latency_ms, "errors": groq_error, "signal_summary": signal_summary},
+        "watsonx": {"raw": watsonx_raw or {}, "latency_ms": watsonx_latency_ms, "errors": watsonx_error, "signal_summary": signal_summary},
+        "local": {"raw": local_raw or {}, "latency_ms": local_latency_ms, "errors": local_error, "signal_summary": signal_summary},
     }
+    final_raw["signal_summary"] = signal_summary
 
     normalized = normalize_council_output(final_raw).to_dict()
     with _CACHE_LOCK:
