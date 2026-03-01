@@ -6,6 +6,7 @@ import json
 import os
 import html
 import re
+import ast
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -45,18 +46,18 @@ def _inject_styles() -> None:
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 <style>
-:root{--bg:#080d1a;--card:rgba(255,255,255,0.04);--card-border:rgba(255,255,255,0.10);--ink:#f1f5f9;--muted:#94a3b8;--dim:#64748b;--accent:#6366f1;--accent2:#8b5cf6;--teal:#14b8a6;--green:#10b981;--red:#ef4444;--orange:#f97316;}
+:root{--bg:#000000;--card:rgba(255,255,255,0.04);--card-border:rgba(255,255,255,0.12);--ink:#ffffff;--muted:#f2f4f8;--dim:#c1c7cd;--accent:#0f62fe;--accent2:#82cfff;--teal:#3ddbd9;--green:#3ddbd9;--red:#ff7eb6;--orange:#be95ff;}
 html, body, .stApp, .stMarkdown, .stTextInput, .stSelectbox, .stSlider, .stTabs, .stButton, .stCaption, .stMetric {
     font-family: 'Inter', sans-serif;
 }
-html,body,.stApp{background:#080d1a!important;color:var(--ink)!important;}
-.stApp{background:radial-gradient(ellipse at 15% 0%,#1a1040 0%,#080d1a 45%,#04091a 100%)!important;}
+html,body,.stApp{background:#000000!important;color:var(--ink)!important;}
+.stApp{background:#000000!important;}
 .block-container{padding-top:0.8rem!important;max-width:1280px!important;}
 .stApp p,.stApp span,.stApp li,.stApp label,.stApp h1,.stApp h2,.stApp h3,.stApp h4,.stMarkdown,[data-testid="stMarkdownContainer"] p{color:var(--ink)!important;}
 .stCaption,[data-testid="stCaptionContainer"] p{color:var(--muted)!important;}
 
 
-[data-testid="stSidebar"]{background:#0a1020!important;border-right:1px solid rgba(255,255,255,0.06)!important;}
+[data-testid="stSidebar"]{background:#111111!important;border-right:1px solid rgba(255,255,255,0.06)!important;}
 [data-testid="stSidebar"] .stMarkdown p,[data-testid="stSidebar"] label,[data-testid="stSidebar"] span{color:var(--ink)!important;}
 [data-testid="stSidebar"] [data-baseweb="select"]{background:rgba(255,255,255,0.06)!important;border-color:rgba(255,255,255,0.12)!important;}
 [data-testid="stSidebar"] [data-baseweb="select"] span{color:var(--ink)!important;}
@@ -64,16 +65,16 @@ div[data-baseweb="input"],div[data-baseweb="base-input"]{background:rgba(255,255
 div[data-baseweb="input"] input,div[data-baseweb="base-input"] input{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;caret-color:var(--accent)!important;}
 div[data-testid="stWidgetLabel"] p,div[data-testid="stWidgetLabel"] label,.stTextInput label,.stSlider label,.stSelectbox label,.stTextArea label{color:var(--muted)!important;font-weight:500!important;font-size:0.82rem!important;letter-spacing:0.03em!important;text-transform:uppercase!important;}
 div[data-testid="stMetric"]{background:var(--card)!important;border:1px solid var(--card-border)!important;border-radius:14px!important;padding:0.8rem 1rem!important;backdrop-filter:blur(8px);transition:transform 0.18s,border-color 0.18s;}
-div[data-testid="stMetric"]:hover{transform:translateY(-2px);border-color:rgba(99,102,241,0.4)!important;}
+div[data-testid="stMetric"]:hover{transform:translateY(-2px);border-color:rgba(15,98,254,0.4)!important;}
 div[data-testid="stMetricLabel"] p{color:var(--muted)!important;font-size:0.78rem!important;font-weight:600!important;letter-spacing:0.04em;text-transform:uppercase;}
 div[data-testid="stMetricValue"]{color:var(--ink)!important;font-weight:800!important;font-size:1.6rem!important;}
 .stTabs [data-baseweb="tab-list"]{background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.07)!important;border-radius:12px!important;padding:4px!important;gap:2px!important;}
 .stTabs [data-baseweb="tab"]{background:transparent!important;border:none!important;border-radius:9px!important;color:var(--muted)!important;font-weight:600!important;font-size:0.82rem!important;padding:0.42rem 0.9rem!important;transition:all 0.15s;}
 .stTabs [data-baseweb="tab"]:hover{color:var(--ink)!important;background:rgba(255,255,255,0.05)!important;}
-.stTabs [aria-selected="true"]{background:rgba(99,102,241,0.22)!important;color:#c4b5fd!important;border:1px solid rgba(99,102,241,0.35)!important;}
+.stTabs [aria-selected="true"]{background:rgba(15,98,254,0.22)!important;color:#82cfff!important;border:1px solid rgba(15,98,254,0.35)!important;}
 .stTabs [data-baseweb="tab"] p,.stTabs [data-baseweb="tab"] span{color:inherit!important;}
-.stButton>button,div[data-testid="stDownloadButton"]>button{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)!important;color:#fff!important;border:none!important;border-radius:10px!important;font-weight:700!important;font-size:0.88rem!important;box-shadow:0 0 18px rgba(99,102,241,0.35)!important;transition:filter 0.18s,transform 0.15s,box-shadow 0.18s!important;}
-.stButton>button:hover,div[data-testid="stDownloadButton"]>button:hover{filter:brightness(1.12)!important;transform:translateY(-1px)!important;box-shadow:0 0 26px rgba(99,102,241,0.55)!important;}
+.stButton>button,div[data-testid="stDownloadButton"]>button{background:linear-gradient(135deg,#0f62fe 0%,#82cfff 100%)!important;color:#fff!important;border:none!important;border-radius:10px!important;font-weight:700!important;font-size:0.88rem!important;box-shadow:0 0 18px rgba(15,98,254,0.35)!important;transition:filter 0.18s,transform 0.15s,box-shadow 0.18s!important;}
+.stButton>button:hover,div[data-testid="stDownloadButton"]>button:hover{filter:brightness(1.12)!important;transform:translateY(-1px)!important;box-shadow:0 0 26px rgba(15,98,254,0.55)!important;}
 .stButton>button[kind="secondary"]{background:rgba(255,255,255,0.07)!important;border:1px solid rgba(255,255,255,0.12)!important;box-shadow:none!important;color:var(--muted)!important;}
 .stButton>button span,div[data-testid="stDownloadButton"]>button span{color:inherit!important;font-weight:700!important;}
 div[data-testid="stDownloadButton"]{width:100%!important;}
@@ -81,26 +82,26 @@ div[data-testid="stDownloadButton"]>button{width:100%!important;}
 div[data-testid="stExpander"]{background:var(--card)!important;border:1px solid var(--card-border)!important;border-radius:12px!important;backdrop-filter:blur(6px);}
 div[data-testid="stExpander"] details summary p,div[data-testid="stExpander"] details summary span{color:var(--ink)!important;font-weight:600!important;}
 div[data-baseweb="slider"] [role="slider"]{background:var(--accent)!important;}
-[data-baseweb="select"] [data-baseweb="menu"]{background:#0f1929!important;border:1px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;}
+[data-baseweb="select"] [data-baseweb="menu"]{background:#111111!important;border:1px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;}
 [data-baseweb="select"] li{color:var(--ink)!important;}
-[data-baseweb="select"] li:hover{background:rgba(99,102,241,0.15)!important;}
+[data-baseweb="select"] li:hover{background:rgba(15,98,254,0.15)!important;}
 [data-testid="stDataFrame"]{border:1px solid rgba(255,255,255,0.08)!important;border-radius:12px!important;overflow:hidden;}
-[data-testid="stDataFrame"] th{background:rgba(99,102,241,0.15)!important;color:#c4b5fd!important;font-weight:700!important;}
+[data-testid="stDataFrame"] th{background:rgba(15,98,254,0.15)!important;color:#82cfff!important;font-weight:700!important;}
 [data-testid="stDataFrame"] td{color:var(--ink)!important;background:rgba(255,255,255,0.02)!important;}
 .stVegaLiteChart,.vega-embed{background:transparent!important;}
 div[data-testid="stAlert"]{border-radius:12px!important;border-left-width:4px!important;}
 div[data-testid="stVerticalBlockBorderWrapper"]>div{border:1px solid var(--card-border)!important;border-radius:16px!important;background:var(--card)!important;backdrop-filter:blur(8px);padding:1rem!important;}
-.hero{background:linear-gradient(135deg,#0f1e3d 0%,#1a1040 50%,#0a1e3c 100%);border:1px solid rgba(99,102,241,0.25);border-radius:20px;padding:1.5rem 1.8rem;box-shadow:0 0 60px rgba(99,102,241,0.1),0 20px 40px rgba(0,0,0,0.4);margin-bottom:1.2rem;position:relative;overflow:hidden;}
-.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(139,92,246,0.2) 0%,transparent 70%);border-radius:50%;}
+.hero{background:#000000;border:1px solid rgba(15,98,254,0.25);border-radius:20px;padding:1.5rem 1.8rem;box-shadow:0 0 60px rgba(15,98,254,0.1),0 20px 40px rgba(0,0,0,0.4);margin-bottom:1.2rem;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(15,98,254,0.2) 0%,transparent 70%);border-radius:50%;}
 .hero h1{margin:0;font-size:1.85rem;font-weight:800;color:#fff;letter-spacing:-0.02em;}
 .hero .subtitle{margin:0.4rem 0 0;color:#a5b4fc;font-size:0.93rem;}
 .step-grid{display:grid;grid-template-columns:repeat(3,minmax(110px,1fr));gap:0.65rem;margin-top:1rem;}
-.step-item{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.65rem 0.75rem;font-size:0.85rem;line-height:1.4;color:#cbd5e1;}
+.step-item{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.65rem 0.75rem;font-size:0.85rem;line-height:1.4;color:#c6c6c6;}
 .step-item b{color:#a5b4fc;display:block;margin-bottom:0.2rem;}
 .loop-card{border-radius:18px;padding:1.1rem 1.2rem;position:relative;overflow:hidden;min-height:200px;backdrop-filter:blur(10px);}
-.loop-card.danger{background:linear-gradient(135deg,rgba(239,68,68,0.12) 0%,rgba(239,68,68,0.05) 100%);border:1px solid rgba(239,68,68,0.35);box-shadow:0 0 30px rgba(239,68,68,0.08);}
-.loop-card.success{background:linear-gradient(135deg,rgba(16,185,129,0.12) 0%,rgba(16,185,129,0.05) 100%);border:1px solid rgba(16,185,129,0.35);box-shadow:0 0 30px rgba(16,185,129,0.08);}
-.loop-card.purple{background:linear-gradient(135deg,rgba(139,92,246,0.14) 0%,rgba(99,102,241,0.06) 100%);border:1px solid rgba(139,92,246,0.35);box-shadow:0 0 30px rgba(139,92,246,0.1);}
+.loop-card.danger{background:linear-gradient(135deg,rgba(255,126,182,0.12) 0%,rgba(255,126,182,0.05) 100%);border:1px solid rgba(255,126,182,0.35);box-shadow:0 0 30px rgba(255,126,182,0.08);}
+.loop-card.success{background:linear-gradient(135deg,rgba(61,219,217,0.12) 0%,rgba(61,219,217,0.05) 100%);border:1px solid rgba(61,219,217,0.35);box-shadow:0 0 30px rgba(61,219,217,0.08);}
+.loop-card.purple{background:linear-gradient(135deg,rgba(130,207,255,0.14) 0%,rgba(15,98,254,0.06) 100%);border:1px solid rgba(130,207,255,0.35);box-shadow:0 0 30px rgba(130,207,255,0.1);}
 .loop-card-title{font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:0.8rem;}
 .loop-stat{display:flex;justify-content:space-between;align-items:center;padding:0.32rem 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.87rem;}
 .loop-stat:last-of-type{border-bottom:none;}
@@ -108,37 +109,37 @@ div[data-testid="stVerticalBlockBorderWrapper"]>div{border:1px solid var(--card-
 .loop-stat-value{font-weight:700;color:var(--ink);}
 .loop-footer{margin-top:0.7rem;font-size:0.76rem;color:var(--dim);}
 .badge{display:inline-flex;align-items:center;gap:0.3rem;border-radius:999px;font-size:0.78rem;font-weight:700;padding:0.28rem 0.75rem;border:1px solid;letter-spacing:0.03em;}
-.badge-ok{background:rgba(16,185,129,0.15);color:#6ee7b7;border-color:rgba(16,185,129,0.35);}
-.badge-failed{background:rgba(239,68,68,0.15);color:#fca5a5;border-color:rgba(239,68,68,0.35);}
-.badge-warn{background:rgba(245,158,11,0.15);color:#fcd34d;border-color:rgba(245,158,11,0.35);}
-.explain{background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-left:4px solid var(--accent);border-radius:14px;padding:1rem 1.1rem;color:var(--ink);line-height:1.65;font-size:0.93rem;}
-.wow{background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(20,184,166,0.08));border:1px solid rgba(99,102,241,0.25);border-radius:14px;padding:0.75rem 0.9rem;font-size:0.88rem;color:#c4b5fd;}
+.badge-ok{background:rgba(61,219,217,0.15);color:#6ee7b7;border-color:rgba(61,219,217,0.35);}
+.badge-failed{background:rgba(255,126,182,0.15);color:#fca5a5;border-color:rgba(255,126,182,0.35);}
+.badge-warn{background:rgba(190,149,255,0.15);color:#fcd34d;border-color:rgba(190,149,255,0.35);}
+.explain{background:rgba(15,98,254,0.06);border:1px solid rgba(15,98,254,0.2);border-left:4px solid var(--accent);border-radius:14px;padding:1rem 1.1rem;color:var(--ink);line-height:1.65;font-size:0.93rem;}
+.wow{background:linear-gradient(135deg,rgba(15,98,254,0.1),rgba(20,184,166,0.08));border:1px solid rgba(15,98,254,0.25);border-radius:14px;padding:0.75rem 0.9rem;font-size:0.88rem;color:#82cfff;}
 .panel{background:var(--card);border:1px solid var(--card-border);border-radius:16px;padding:1rem 1.2rem;}
 .hint{border-bottom:1px dotted var(--accent);cursor:help;font-weight:600;color:#a5b4fc;}
 .flow-grid{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:0.55rem;margin:0.6rem 0;}
 .flow-card{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:0.65rem 0.75rem;color:var(--ink);font-size:0.86rem;line-height:1.35;}
 .flow-card b{color:#a5b4fc;display:block;margin-bottom:0.2rem;}
-.council-card{background:linear-gradient(135deg,rgba(99,102,241,0.08) 0%,rgba(139,92,246,0.05) 100%);border:1px solid rgba(99,102,241,0.25);border-radius:16px;padding:1.1rem 1.2rem;margin-bottom:0.8rem;position:relative;}
-.council-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#6366f1,#8b5cf6);border-radius:3px 0 0 3px;}
-.council-model-badge{display:inline-flex;align-items:center;gap:0.3rem;background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);border-radius:999px;padding:0.15rem 0.55rem;font-size:0.72rem;font-weight:700;margin-bottom:0.6rem;}
-.council-driver{display:flex;align-items:flex-start;gap:0.5rem;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:10px;padding:0.55rem 0.7rem;margin:0.3rem 0;font-size:0.87rem;color:var(--ink);line-height:1.4;}
-.council-strategy{display:flex;align-items:flex-start;gap:0.5rem;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:0.55rem 0.7rem;margin:0.3rem 0;font-size:0.87rem;color:var(--ink);line-height:1.4;}
-.council-prevention{display:flex;align-items:flex-start;gap:0.5rem;background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.15);border-radius:10px;padding:0.55rem 0.7rem;margin:0.3rem 0;font-size:0.87rem;color:var(--ink);line-height:1.4;}
-.council-exec-summary{background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(99,102,241,0.06));border:1px solid rgba(139,92,246,0.3);border-radius:16px;padding:1.1rem 1.3rem;margin-bottom:1.2rem;font-size:0.95rem;line-height:1.65;color:#e2e8f0;}
-.council-disagree{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:0.65rem 0.8rem;font-size:0.86rem;color:#fcd34d;margin:0.3rem 0;}
+.council-card{background:linear-gradient(135deg,rgba(15,98,254,0.08) 0%,rgba(130,207,255,0.05) 100%);border:1px solid rgba(15,98,254,0.25);border-radius:16px;padding:1.1rem 1.2rem;margin-bottom:0.8rem;position:relative;}
+.council-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#0f62fe,#0043ce);border-radius:3px 0 0 3px;}
+.council-model-badge{display:inline-flex;align-items:center;gap:0.3rem;background:rgba(15,98,254,0.15);color:#a5b4fc;border:1px solid rgba(15,98,254,0.3);border-radius:999px;padding:0.15rem 0.55rem;font-size:0.72rem;font-weight:700;margin-bottom:0.6rem;}
+.council-driver{display:flex;align-items:flex-start;gap:0.5rem;background:rgba(255,126,182,0.05);border:1px solid rgba(255,126,182,0.15);border-radius:10px;padding:0.55rem 0.7rem;margin:0.3rem 0;font-size:0.87rem;color:var(--ink);line-height:1.4;}
+.council-strategy{display:flex;align-items:flex-start;gap:0.5rem;background:rgba(61,219,217,0.05);border:1px solid rgba(61,219,217,0.15);border-radius:10px;padding:0.55rem 0.7rem;margin:0.3rem 0;font-size:0.87rem;color:var(--ink);line-height:1.4;}
+.council-prevention{display:flex;align-items:flex-start;gap:0.5rem;background:rgba(15,98,254,0.05);border:1px solid rgba(15,98,254,0.15);border-radius:10px;padding:0.55rem 0.7rem;margin:0.3rem 0;font-size:0.87rem;color:var(--ink);line-height:1.4;}
+.council-exec-summary{background:linear-gradient(135deg,rgba(130,207,255,0.1),rgba(15,98,254,0.06));border:1px solid rgba(130,207,255,0.3);border-radius:16px;padding:1.1rem 1.3rem;margin-bottom:1.2rem;font-size:0.95rem;line-height:1.65;color:#e0e0e0;}
+.council-disagree{background:rgba(190,149,255,0.07);border:1px solid rgba(190,149,255,0.25);border-radius:12px;padding:0.65rem 0.8rem;font-size:0.86rem;color:#fcd34d;margin:0.3rem 0;}
 .st-key-jarvis_trigger{position:fixed;right:20px;bottom:20px;width:148px;z-index:10001;}
 .st-key-jarvis_trigger>div{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important;}
-.st-key-jarvis_trigger .stButton>button{height:48px;border-radius:999px!important;background:linear-gradient(135deg,#6366f1 0%,#14b8a6 100%)!important;border:none!important;box-shadow:0 4px 20px rgba(99,102,241,0.5)!important;font-size:0.85rem!important;font-weight:700!important;color:#fff!important;white-space:nowrap;}
-.st-key-jarvis_trigger .stButton>button:hover{box-shadow:0 0 30px rgba(99,102,241,0.7)!important;transform:translateY(-2px)!important;}
-.st-key-jarvis_panel{position:fixed;right:20px;bottom:84px;width:min(480px,95vw);max-height:min(76vh,740px);z-index:10000;background:#0a1020;border:1px solid rgba(99,102,241,0.3);border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 40px rgba(99,102,241,0.1);padding:1rem;backdrop-filter:blur(16px);overflow-x:hidden;overflow-y:auto;}
-.st-key-jarvis_panel p,.st-key-jarvis_panel label,.st-key-jarvis_panel span,.st-key-jarvis_panel h1,.st-key-jarvis_panel h2,.st-key-jarvis_panel h3{color:#e2e8f0!important;}
-.st-key-jarvis_panel div[data-baseweb="input"],.st-key-jarvis_panel div[data-baseweb="base-input"]{background:rgba(255,255,255,0.06)!important;border:1px solid rgba(99,102,241,0.3)!important;border-radius:999px!important;min-height:44px!important;}
-.st-key-jarvis_panel div[data-baseweb="input"] input,.st-key-jarvis_panel div[data-baseweb="base-input"] input{color:#e2e8f0!important;-webkit-text-fill-color:#e2e8f0!important;}
+.st-key-jarvis_trigger .stButton>button{height:48px;border-radius:999px!important;background:linear-gradient(135deg,#0f62fe 0%,#14b8a6 100%)!important;border:none!important;box-shadow:0 4px 20px rgba(15,98,254,0.5)!important;font-size:0.85rem!important;font-weight:700!important;color:#fff!important;white-space:nowrap;}
+.st-key-jarvis_trigger .stButton>button:hover{box-shadow:0 0 30px rgba(15,98,254,0.7)!important;transform:translateY(-2px)!important;}
+.st-key-jarvis_panel{position:fixed;right:20px;bottom:84px;width:min(480px,95vw);max-height:min(76vh,740px);z-index:10000;background:#0a1020;border:1px solid rgba(15,98,254,0.3);border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 40px rgba(15,98,254,0.1);padding:1rem;backdrop-filter:blur(16px);overflow-x:hidden;overflow-y:auto;}
+.st-key-jarvis_panel p,.st-key-jarvis_panel label,.st-key-jarvis_panel span,.st-key-jarvis_panel h1,.st-key-jarvis_panel h2,.st-key-jarvis_panel h3{color:#ffffff!important;}
+.st-key-jarvis_panel div[data-baseweb="input"],.st-key-jarvis_panel div[data-baseweb="base-input"]{background:rgba(255,255,255,0.06)!important;border:1px solid rgba(15,98,254,0.3)!important;border-radius:999px!important;min-height:44px!important;}
+.st-key-jarvis_panel div[data-baseweb="input"] input,.st-key-jarvis_panel div[data-baseweb="base-input"] input{color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;}
 .st-key-jarvis_panel form{border:none!important;padding:0!important;margin:0!important;background:transparent!important;}
 .st-key-jarvis_panel .stButton>button{border-radius:999px!important;font-size:0.92rem!important;min-height:44px!important;width:100%!important;}
 .jarvis-title{color:#f8fafc!important;font-size:1.4rem;font-weight:800;line-height:1;}
 .jarvis-sub{color:#94a3b8!important;font-size:0.78rem;margin-top:0.15rem;}
-.chat-bubble-ai{background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:14px 14px 14px 4px;padding:0.65rem 0.8rem;color:#e2e8f0;font-size:0.91rem;line-height:1.5;margin-bottom:0.4rem;}
+.chat-bubble-ai{background:rgba(15,98,254,0.1);border:1px solid rgba(15,98,254,0.2);border-radius:14px 14px 14px 4px;padding:0.65rem 0.8rem;color:#e0e0e0;font-size:0.91rem;line-height:1.5;margin-bottom:0.4rem;}
 .chat-bubble-user{background:rgba(20,184,166,0.1);border:1px solid rgba(20,184,166,0.2);border-radius:14px 14px 4px 14px;padding:0.6rem 0.75rem;color:#ccfbf1;font-size:0.89rem;line-height:1.45;text-align:right;margin-bottom:0.4rem;}
 @media(max-width:640px){.st-key-jarvis_panel{right:10px;bottom:74px;width:calc(100vw - 20px);max-height:62vh;}.st-key-jarvis_trigger{right:10px;bottom:12px;}.flow-grid,.step-grid{grid-template-columns:1fr 1fr;}}
 /* ── Ensure Streamlit Icons Survive ── */
@@ -188,11 +189,11 @@ span[class^="material-symbols"], span[class*=" material-symbols"],
     font-family: 'Inter', sans-serif !important;
     font-size: 0.95rem !important;
     line-height: 1.5 !important;
-    color: #cbd5e1 !important;
+    color: #c6c6c6 !important;
 }
 .council-driver, .council-strategy {
     font-size: 0.95rem !important;
-    color: #f1f5f9 !important;
+    color: #f4f4f4 !important;
     margin-bottom: 0.5rem !important;
     padding-left: 1rem !important;
     border-left: 2px solid rgba(255,255,255,0.1);
@@ -207,7 +208,7 @@ span[class^="material-symbols"], span[class*=" material-symbols"],
 
 /* ── Dropdown / Popover Fixes ── */
 div[data-baseweb="popover"], div[data-baseweb="popover"] > div { background: #0a1020 !important; }
-ul[role="listbox"], ul[role="listbox"] > li { background: #0a1020 !important; color: #f1f5f9 !important; }
+ul[role="listbox"], ul[role="listbox"] > li { background: #0a1020 !important; color: #f4f4f4 !important; }
 li[role="option"]:hover, li[role="option"][aria-selected="true"] { background: rgba(255,255,255,0.1) !important; }
 div[role="listbox"] { background: #0a1020 !important; }
 
@@ -325,9 +326,14 @@ def _render_council_tab(council_output: Dict[str, Any]) -> None:
         if drivers:
             items_html = ""
             for item in drivers[:6]:
-                d = html.escape(str((item or {}).get("driver", "Unknown driver")))
-                conf = float((item or {}).get("confidence", 0.0)) * 100
-                items_html += f"<div class='council-driver'><span>{d} <span style='color:#ef4444;font-weight:700;font-size:0.78rem;margin-left:auto;white-space:nowrap;'>{conf:.0f}% conf</span></span></div>"
+                d = html.escape(_coerce_claim_text(item, ["driver", "strategy", "action"]) or "Unknown driver")
+                conf_value = _coerce_claim_confidence(item)
+                conf_html = (
+                    f"<span style='color:#ff7eb6;font-weight:700;font-size:0.78rem;margin-left:auto;white-space:nowrap;'>{conf_value*100:.0f}% conf</span>"
+                    if conf_value is not None
+                    else ""
+                )
+                items_html += f"<div class='council-driver'><span>{d} {conf_html}</span></div>"
             st.markdown(
                 f"<div class='council-card'>"
                 f"<div class='council-model-badge'>⚡ Failure Drivers</div>"
@@ -339,14 +345,19 @@ def _render_council_tab(council_output: Dict[str, Any]) -> None:
         if recommendations:
             items_html = ""
             for i, item in enumerate(recommendations[:5], 1):
-                action = html.escape(str((item or {}).get("action", "")))
-                effect = html.escape(str((item or {}).get("expected_effect", "")))
-                conf = float((item or {}).get("confidence", 0.0)) * 100
+                action = html.escape(_coerce_claim_text(item, ["action", "strategy", "driver"]))
+                effect = html.escape(str((item or {}).get("expected_effect", "")) if isinstance(item, dict) else "")
+                conf_value = _coerce_claim_confidence(item)
+                conf_html = (
+                    f"<span style='color:#a5b4fc;font-size:0.76rem;'> — {conf_value*100:.0f}% conf</span>"
+                    if conf_value is not None
+                    else ""
+                )
                 items_html += (
                     f"<div class='council-prevention'>"
                     f"<span><strong>{i}. {action}</strong>"
                     f"{'<br/><span style=color:var(--muted);font-size:0.82rem>' + effect + '</span>' if effect else ''}"
-                    f"<span style='color:#a5b4fc;font-size:0.76rem;'> — {conf:.0f}% conf</span></span></div>"
+                    f"{conf_html}</span></div>"
                 )
             st.markdown(
                 f"<div class='council-card'>"
@@ -360,12 +371,17 @@ def _render_council_tab(council_output: Dict[str, Any]) -> None:
         if strategies:
             items_html = ""
             for item in strategies[:6]:
-                s = html.escape(str((item or {}).get("strategy", "Unknown strategy")))
-                conf = float((item or {}).get("confidence", 0.0)) * 100
-                items_html += f"<div class='council-strategy'><span>{s} <span style='color:#10b981;font-weight:700;font-size:0.78rem;'>{conf:.0f}%</span></span></div>"
+                s = html.escape(_coerce_claim_text(item, ["strategy", "action", "driver"]) or "Unknown strategy")
+                conf_value = _coerce_claim_confidence(item)
+                conf_html = (
+                    f"<span style='color:#3ddbd9;font-weight:700;font-size:0.78rem;'>{conf_value*100:.0f}%</span>"
+                    if conf_value is not None
+                    else ""
+                )
+                items_html += f"<div class='council-strategy'><span>{s} {conf_html}</span></div>"
             st.markdown(
                 f"<div class='council-card'>"
-                f"<div class='council-model-badge' style='background:rgba(16,185,129,0.15);color:#6ee7b7;border-color:rgba(16,185,129,0.3);'>✓ Survivor Strategies</div>"
+                f"<div class='council-model-badge' style='background:rgba(61,219,217,0.15);color:#6ee7b7;border-color:rgba(61,219,217,0.3);'>✓ Survivor Strategies</div>"
                 f"{items_html}</div>",
                 unsafe_allow_html=True,
             )
@@ -384,8 +400,8 @@ def _render_council_tab(council_output: Dict[str, Any]) -> None:
                     f"</div>"
                 )
             st.markdown(
-                f"<div class='council-card' style='border-color:rgba(245,158,11,0.3)'>"
-                f"<div class='council-model-badge' style='background:rgba(245,158,11,0.15);color:#fcd34d;border-color:rgba(245,158,11,0.3);'>⚠ Council Disagreements</div>"
+                f"<div class='council-card' style='border-color:rgba(190,149,255,0.3)'>"
+                f"<div class='council-model-badge' style='background:rgba(190,149,255,0.15);color:#fcd34d;border-color:rgba(190,149,255,0.3);'>⚠ Council Disagreements</div>"
                 f"{items_html}</div>",
                 unsafe_allow_html=True,
             )
@@ -421,22 +437,22 @@ def _render_council_trace_tab(council_output: Dict[str, Any], qual: Dict[str, An
         <div class="flow-grid" style="grid-template-columns:repeat(5,1fr);">
           <div class="flow-card" style="border-color:rgba(20,184,166,0.4);background:rgba(20,184,166,0.06);">
             <b style="color:#14b8a6;">① NLP Engine</b><br/>
-            Scans financial text + synth metrics. Intensity: <b style="color:#f1f5f9;">{nlp_intensity:.1f}/10</b><br/>
+            Scans financial text + synth metrics. Intensity: <b style="color:#f4f4f4;">{nlp_intensity:.1f}/10</b><br/>
             Themes: <em style="color:#6ee7b7;">{', '.join(nlp_themes[:3]) or 'none detected'}</em>
           </div>
-          <div class="flow-card" style="border-color:rgba(99,102,241,0.4);background:rgba(99,102,241,0.06);">
+          <div class="flow-card" style="border-color:rgba(15,98,254,0.4);background:rgba(15,98,254,0.06);">
             <b style="color:#a5b4fc;">② Groq Draft</b><br/>
             Generates structured failure narrative from metrics, peers, NLP signals, and Tavily evidence.
           </div>
-          <div class="flow-card" style="border-color:rgba(139,92,246,0.4);background:rgba(139,92,246,0.06);">
-            <b style="color:#c4b5fd;">③ watsonx Critique</b><br/>
+          <div class="flow-card" style="border-color:rgba(130,207,255,0.4);background:rgba(130,207,255,0.06);">
+            <b style="color:#82cfff;">③ watsonx Critique</b><br/>
             Challenges weakly-supported claims and forces citations back to evidence IDs.
           </div>
-          <div class="flow-card" style="border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.06);">
+          <div class="flow-card" style="border-color:rgba(190,149,255,0.4);background:rgba(190,149,255,0.06);">
             <b style="color:#fcd34d;">④ Local Sanity</b><br/>
             Checks narrative consistency against quantitative risk score + NLP forensic summary.
           </div>
-          <div class="flow-card" style="border-color:rgba(16,185,129,0.4);background:rgba(16,185,129,0.06);">
+          <div class="flow-card" style="border-color:rgba(61,219,217,0.4);background:rgba(61,219,217,0.06);">
             <b style="color:#6ee7b7;">⑤ Synthesis</b><br/>
             Consensus keeps high-conf claims, downgrades weak ones, records disagreements.
           </div>
@@ -451,7 +467,7 @@ def _render_council_trace_tab(council_output: Dict[str, Any], qual: Dict[str, An
         top_themes = sorted(theme_scores.items(), key=lambda kv: kv[1], reverse=True)[:5]
         theme_html = "".join(
             f"<div class='loop-stat'><span class='loop-stat-label'>{_friendly_theme_name(t)}</span>"
-            f"<span class='loop-stat-value' style='color:{'#ef4444' if s > 0.4 else '#f97316' if s > 0.2 else '#94a3b8'};'>"
+            f"<span class='loop-stat-value' style='color:{'#ff7eb6' if s > 0.4 else '#f97316' if s > 0.2 else '#94a3b8'};'>"
             f"{'🔴' if s > 0.4 else '🟠' if s > 0.2 else '⚪'} {s:.2f}</span></div>"
             for t, s in top_themes
         )
@@ -476,13 +492,13 @@ def _render_council_trace_tab(council_output: Dict[str, Any], qual: Dict[str, An
         "Error" if (breakdown.get(k, {}) or {}).get("errors") else "OK"
         for k in ["groq", "watsonx", "local"]
     ]
-    bar_colors = ["#ef4444" if s == "Error" else "#6366f1" for s in statuses]
+    bar_colors = ["#ff7eb6" if s == "Error" else "#0f62fe" for s in statuses]
 
     if any(latencies):
         fig_lat = go.Figure(go.Bar(
             x=systems, y=latencies, marker=dict(color=bar_colors, line=dict(width=0)),
             text=[f"{v}ms" for v in latencies], textposition="outside",
-            textfont=dict(color="#f1f5f9", family="Inter"),
+            textfont=dict(color="#f4f4f4", family="Inter"),
             hovertemplate="<b>%{x}</b><br>Latency: %{y}ms<extra></extra>",
         ))
         fig_lat.update_layout(
@@ -501,7 +517,7 @@ def _render_council_trace_tab(council_output: Dict[str, Any], qual: Dict[str, An
             st.metric("Total Pipeline Time", f"{total_ms}ms")
 
     # ── Per-system readable outputs ───────────────────────────────────────
-    for key, label, accent in [("groq", "Groq LLM Draft", "#6366f1"), ("watsonx", "watsonx Critique", "#8b5cf6"), ("local", "Local Sanity Check", "#14b8a6")]:
+    for key, label, accent in [("groq", "Groq LLM Draft", "#0f62fe"), ("watsonx", "watsonx Critique", "#0043ce"), ("local", "Local Sanity Check", "#14b8a6")]:
         row = dict(breakdown.get(key, {}) or {})
         raw = dict(row.get("raw", {}) or {})
         errors = row.get("errors")
@@ -745,6 +761,65 @@ def _clean_metrics(metrics: Dict[str, object]) -> Dict[str, object]:
         else:
             out[k] = v
     return out
+
+
+def _coerce_claim_text(item: Any, preferred_keys: List[str]) -> str:
+    payload: Dict[str, Any] = {}
+    if isinstance(item, dict):
+        payload = item
+    elif isinstance(item, str):
+        raw = item.strip()
+        if raw.startswith("{") and raw.endswith("}"):
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict):
+                    payload = parsed
+            except Exception:
+                try:
+                    parsed = ast.literal_eval(raw)
+                    if isinstance(parsed, dict):
+                        payload = parsed
+                except Exception:
+                    payload = {}
+        if not payload:
+            return raw
+
+    if payload:
+        for key in preferred_keys:
+            candidate = str(payload.get(key, "")).strip()
+            if candidate:
+                return candidate
+        return str(payload).strip()
+
+    return str(item).strip()
+
+
+def _coerce_claim_confidence(item: Any) -> Optional[float]:
+    if isinstance(item, dict):
+        raw = item.get("confidence")
+        try:
+            conf = float(raw)
+        except (TypeError, ValueError):
+            return None
+        return max(0.0, min(1.0, conf))
+
+    if isinstance(item, str):
+        raw = item.strip()
+        if raw.startswith("{") and raw.endswith("}"):
+            try:
+                parsed = json.loads(raw)
+            except Exception:
+                try:
+                    parsed = ast.literal_eval(raw)
+                except Exception:
+                    return None
+            if isinstance(parsed, dict):
+                try:
+                    conf = float(parsed.get("confidence"))
+                except (TypeError, ValueError):
+                    return None
+                return max(0.0, min(1.0, conf))
+    return None
 
 
 def _metrics_table(metrics: Dict[str, object], hide_missing: bool = False) -> pd.DataFrame:
@@ -1027,7 +1102,7 @@ def _chart_layer_stress_heatmap(
             x=alt.X("Layer:N", title=None, sort=["Macro", "Business", "Financial", "Operational", "Qualitative"]),
             color=alt.Color(
                 "Stress Score:Q",
-                scale=alt.Scale(range=["#d7eef6", "#8fc6d6", "#377ea3", "#ef4444"]),
+                scale=alt.Scale(range=["#d7eef6", "#8fc6d6", "#377ea3", "#ff7eb6"]),
                 title="Stress Intensity",
             ),
             tooltip=["Layer", alt.Tooltip("Stress Score:Q", format=".2f"), "Signals"],
@@ -1053,12 +1128,12 @@ def _chart_risk_contribution(components: Dict[str, float]) -> go.Figure:
     values = [float(v) for _, v in items]
     total = sum(values) or 1
     pcts = [v / total * 100 for v in values]
-    colors = ["#ef4444" if v > 0.3 else "#f97316" if v > 0.15 else "#6366f1" for v in values]
+    colors = ["#ff7eb6" if v > 0.3 else "#f97316" if v > 0.15 else "#0f62fe" for v in values]
     fig = go.Figure(go.Bar(
         x=values, y=labels, orientation="h",
         marker=dict(color=colors, line=dict(width=0)),
         text=[f"{p:.1f}%" for p in pcts], textposition="outside",
-        textfont=dict(color="#f1f5f9", size=11, family="Inter"),
+        textfont=dict(color="#f4f4f4", size=11, family="Inter"),
         hovertemplate="<b>%{y}</b><br>Score: %{x:.3f}<br>% of total: <br><extra></extra>",
     ))
     fig.update_layout(
@@ -1067,7 +1142,7 @@ def _chart_risk_contribution(components: Dict[str, float]) -> go.Figure:
         margin=dict(l=0, r=50, t=30, b=0), height=max(200, len(labels)*40),
         xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#94a3b8"),
         yaxis=dict(showgrid=False, color="#94a3b8"),
-        title=dict(text="Risk Contribution Decomposition", font=dict(color="#e2e8f0", size=13)),
+        title=dict(text="Risk Contribution Decomposition", font=dict(color="#e0e0e0", size=13)),
     )
     return fig
 
@@ -1088,12 +1163,12 @@ def _chart_nlp_theme_scores(qual: Dict[str, object]) -> go.Figure:
     themes = [_friendly_theme_name(t) for t, _ in items]
     scores = [float(s) for _, s in items]
     mentions = [int(theme_counts.get(t, 0) or 0) for t, _ in items]
-    colors = ["#ef4444" if s >= 0.45 else "#f97316" if s >= 0.25 else "#6366f1" for s in scores]
+    colors = ["#ff7eb6" if s >= 0.45 else "#f97316" if s >= 0.25 else "#0f62fe" for s in scores]
     fig = go.Figure(go.Bar(
         x=themes, y=scores,
         marker=dict(color=colors, line=dict(width=0)),
         text=[f"{s:.2f}" for s in scores], textposition="outside",
-        textfont=dict(color="#f1f5f9", size=12, family="Inter"),
+        textfont=dict(color="#f4f4f4", size=12, family="Inter"),
         customdata=mentions,
         hovertemplate="<b>%{x}</b><br>Score: %{y:.3f}<br>Mentions: %{customdata}<extra></extra>",
     ))
@@ -1104,7 +1179,7 @@ def _chart_nlp_theme_scores(qual: Dict[str, object]) -> go.Figure:
         xaxis=dict(showgrid=False, tickangle=-20, color="#94a3b8"),
         yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#94a3b8",
                    title="Severity Score (0-1)", range=[0, min(1.1, max(scores)*1.3) if scores else 1]),
-        title=dict(text="NLP Distress Theme Scores", font=dict(color="#e2e8f0", size=14)),
+        title=dict(text="NLP Distress Theme Scores", font=dict(color="#e0e0e0", size=14)),
     )
     return fig
 
@@ -1122,7 +1197,7 @@ def _chart_before_after(original: float, adjusted: float) -> alt.Chart:
         .encode(
             x=alt.X("Scenario:N", title=None, sort=["Original", "Counterfactual"]),
             y=alt.Y("Risk:Q", title="Risk Score"),
-            color=alt.Color("Scenario:N", scale=alt.Scale(range=["#ef4444", "#14b8a6"]), legend=None),
+            color=alt.Color("Scenario:N", scale=alt.Scale(range=["#ff7eb6", "#14b8a6"]), legend=None),
             tooltip=["Scenario", "Risk"],
         )
         .properties(height=220)
@@ -1151,12 +1226,12 @@ def _chart_risk_components(components: Dict[str, float]) -> go.Figure:
         return fig
     labels = [k.replace("_", " ").title() for k in components]
     values = [abs(float(v)) for v in components.values()]
-    colors = ["#6366f1", "#14b8a6", "#f97316", "#7dd3fc", "#a78bfa", "#ef4444", "#10b981"]
+    colors = ["#0f62fe", "#14b8a6", "#f97316", "#7dd3fc", "#78a9ff", "#ff7eb6", "#3ddbd9"]
     fig = go.Figure(go.Pie(
         labels=labels, values=values, hole=0.5,
         marker=dict(colors=colors[:len(labels)], line=dict(color="#080d1a", width=2)),
         textinfo="label+percent",
-        textfont=dict(color="#e2e8f0", size=11, family="Inter"),
+        textfont=dict(color="#e0e0e0", size=11, family="Inter"),
         hovertemplate="<b>%{label}</b><br>Score: %{value:.3f}<br>%{percent}<extra></extra>",
     ))
     fig.update_layout(
@@ -1164,7 +1239,7 @@ def _chart_risk_components(components: Dict[str, float]) -> go.Figure:
         font=dict(color="#94a3b8", family="Inter"),
         margin=dict(l=0, r=0, t=10, b=0), height=260,
         legend=dict(font=dict(color="#94a3b8"), bgcolor="rgba(0,0,0,0)"),
-        title=dict(text="Risk Component Mix", font=dict(color="#e2e8f0", size=13)),
+        title=dict(text="Risk Component Mix", font=dict(color="#e0e0e0", size=13)),
     )
     return fig
 
@@ -1183,10 +1258,10 @@ def _chart_component_delta(failing_components: Dict[str, float], survivor_compon
     surv_vals = [float(survivor_components.get(k, 0)) for k in all_keys]
     fig = go.Figure()
     fig.add_trace(go.Bar(name="Failed Company", x=labels, y=fail_vals,
-                         marker=dict(color="#ef4444", line=dict(width=0)),
+                         marker=dict(color="#ff7eb6", line=dict(width=0)),
                          hovertemplate="<b>%{x}</b><br>Failed: %{y:.3f}<extra></extra>"))
     fig.add_trace(go.Bar(name="Survivor Avg", x=labels, y=surv_vals,
-                         marker=dict(color="#10b981", line=dict(width=0)),
+                         marker=dict(color="#3ddbd9", line=dict(width=0)),
                          hovertemplate="<b>%{x}</b><br>Survivor: %{y:.3f}<extra></extra>"))
     fig.update_layout(
         barmode="group", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
@@ -1195,7 +1270,7 @@ def _chart_component_delta(failing_components: Dict[str, float], survivor_compon
         xaxis=dict(showgrid=False, tickangle=-18, color="#94a3b8"),
         yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#94a3b8", title="Component Score"),
         legend=dict(font=dict(color="#94a3b8"), bgcolor="rgba(0,0,0,0)"),
-        title=dict(text="Component Delta vs Survivor Cohort", font=dict(color="#e2e8f0", size=13)),
+        title=dict(text="Component Delta vs Survivor Cohort", font=dict(color="#e0e0e0", size=13)),
     )
     return fig
 
@@ -1235,7 +1310,7 @@ def _chart_peer_positioning(
         .encode(
             x=alt.X("Current Ratio:Q", title="Current Ratio (higher is better)"),
             y=alt.Y("Debt/Equity:Q", title="Debt/Equity (lower is better)"),
-            color=alt.Color("Group:N", scale=alt.Scale(range=["#ef4444", "#14b8a6"])),
+            color=alt.Color("Group:N", scale=alt.Scale(range=["#ff7eb6", "#14b8a6"])),
             size=alt.Size("Risk Score:Q", scale=alt.Scale(range=[80, 520])),
             tooltip=["Ticker", "Group", alt.Tooltip("Current Ratio:Q", format=".2f"), alt.Tooltip("Debt/Equity:Q", format=".2f"), "Risk Score"],
         )
@@ -2229,9 +2304,10 @@ def main() -> None:
         if drivers:
             items = ""
             for item in drivers[:6]:
-                d = str(item.get("driver", item) if isinstance(item, dict) else item)
-                conf = float(item.get("confidence", 0.0)) * 100 if isinstance(item, dict) else 0
-                items += f"<div class='council-driver'>{html.escape(d)}{f' — <span style=color:#ef4444>{conf:.0f}% confidence</span>' if conf else ''}</div>"
+                d = _coerce_claim_text(item, ["driver", "strategy", "action"])
+                conf_value = _coerce_claim_confidence(item)
+                conf_html = f" — <span style=color:#ff7eb6>{conf_value*100:.0f}% confidence</span>" if conf_value is not None else ""
+                items += f"<div class='council-driver'>{html.escape(d)}{conf_html}</div>"
             st.markdown(
                 f"<div class='council-card' style='margin-top:0.8rem;'>"
                 f"<div class='council-model-badge'>⚡ Why It Failed</div>{items}</div>",
@@ -2242,11 +2318,11 @@ def main() -> None:
         if strategies:
             items = ""
             for item in strategies[:5]:
-                s = str(item.get("strategy", item) if isinstance(item, dict) else item)
+                s = _coerce_claim_text(item, ["strategy", "action", "driver"])
                 items += f"<div class='council-strategy'>{html.escape(s)}</div>"
             st.markdown(
-                f"<div class='council-card' style='border-color:rgba(16,185,129,0.3);'>"
-                f"<div class='council-model-badge' style='background:rgba(16,185,129,0.15);color:#6ee7b7;border-color:rgba(16,185,129,0.3);'>✓ How It Could Have Been Prevented</div>{items}</div>",
+                f"<div class='council-card' style='border-color:rgba(61,219,217,0.3);'>"
+                f"<div class='council-model-badge' style='background:rgba(61,219,217,0.15);color:#6ee7b7;border-color:rgba(61,219,217,0.3);'>✓ How It Could Have Been Prevented</div>{items}</div>",
                 unsafe_allow_html=True)
 
         s1, s2, s3, s4 = st.columns(4)
@@ -2364,12 +2440,12 @@ def main() -> None:
             x=_layer_names, y=_layer_scores,
             marker=dict(
                 color=_layer_scores,
-                colorscale=[[0, "#10b981"], [0.4, "#f97316"], [1, "#ef4444"]],
+                colorscale=[[0, "#3ddbd9"], [0.4, "#f97316"], [1, "#ff7eb6"]],
                 line=dict(width=0), showscale=True,
                 colorbar=dict(title="Stress", tickfont=dict(color="#94a3b8"), titlefont=dict(color="#94a3b8")),
             ),
             text=[f"{s:.2f}" for s in _layer_scores], textposition="outside",
-            textfont=dict(color="#f1f5f9", size=13, family="Inter"),
+            textfont=dict(color="#f4f4f4", size=13, family="Inter"),
             hovertemplate="<b>%{x}</b><br>Stress Score: %{y:.2f}<extra></extra>",
         ))
         _hm_fig.update_layout(
@@ -2378,7 +2454,7 @@ def main() -> None:
             margin=dict(l=0, r=0, t=30, b=0), height=260,
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.07)", title="Stress Score", range=[0, 1.15]),
-            title=dict(text="Layer Stress Heatmap (hover for signal details)", font=dict(color="#e2e8f0", size=13)),
+            title=dict(text="Layer Stress Heatmap (hover for signal details)", font=dict(color="#e0e0e0", size=13)),
         )
         st.plotly_chart(_hm_fig, use_container_width=True, config={"displayModeBar": "hover"})
 
@@ -2402,11 +2478,11 @@ def main() -> None:
         _pf_df = pd.DataFrame(_peer_fig_rows)
         _pf_fig = px.scatter(
             _pf_df, x="DE", y="CR", size="Risk", color="Type", text="Company",
-            color_discrete_map={"Survivor": "#10b981", "Subject": "#ef4444"},
+            color_discrete_map={"Survivor": "#3ddbd9", "Subject": "#ff7eb6"},
             size_max=40, title="Peer Positioning: Debt/Equity vs Liquidity",
             labels={"DE": "Debt / Equity", "CR": "Current Ratio (Liquidity)", "Risk": "Risk Score"},
         )
-        _pf_fig.update_traces(textposition="top center", textfont=dict(color="#f1f5f9", size=10))
+        _pf_fig.update_traces(textposition="top center", textfont=dict(color="#f4f4f4", size=10))
         _pf_fig.update_layout(
             plot_bgcolor="rgba(255,255,255,0.02)", paper_bgcolor="rgba(0,0,0,0)",
             font=dict(color="#94a3b8", family="Inter"),
@@ -2417,9 +2493,9 @@ def main() -> None:
                        title="Current Ratio (higher = safer)"),
             legend=dict(font=dict(color="#94a3b8"), bgcolor="rgba(0,0,0,0)"),
         )
-        _pf_fig.add_hline(y=1.0, line_dash="dash", line_color="rgba(245,158,11,0.5)",
+        _pf_fig.add_hline(y=1.0, line_dash="dash", line_color="rgba(190,149,255,0.5)",
                            annotation_text="CR=1.0 danger zone", annotation_font_color="#fcd34d")
-        _pf_fig.add_vline(x=3.0, line_dash="dash", line_color="rgba(239,68,68,0.4)",
+        _pf_fig.add_vline(x=3.0, line_dash="dash", line_color="rgba(255,126,182,0.4)",
                            annotation_text="DTE=3.0 high risk", annotation_font_color="#fca5a5")
         st.plotly_chart(_pf_fig, use_container_width=True, config={"displayModeBar": "hover"})
 
@@ -2517,7 +2593,7 @@ def main() -> None:
         # Plotly interactive scenario comparison
         import plotly.graph_objects as go
         fig_scenario = go.Figure()
-        colors = ["#ef4444" if failing_risk_score > 50 else "#f97316", "#10b981"]
+        colors = ["#ff7eb6" if failing_risk_score > 50 else "#f97316", "#3ddbd9"]
         labels = ["Current Risk", "Scenario Risk"]
         values = [failing_risk_score, custom_score]
         for i, (lbl, val, col) in enumerate(zip(labels, values, colors)):
@@ -2525,7 +2601,7 @@ def main() -> None:
                 x=[lbl], y=[val], name=lbl,
                 marker=dict(color=col, line=dict(width=0)),
                 text=[f"{val:.1f}"], textposition="outside",
-                textfont=dict(color="#f1f5f9", size=16, family="Inter"),
+                textfont=dict(color="#f4f4f4", size=16, family="Inter"),
                 hovertemplate=f"<b>{lbl}</b><br>Risk Score: %{{y:.2f}}<extra></extra>",
             ))
         fig_scenario.update_layout(

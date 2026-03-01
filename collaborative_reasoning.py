@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import threading
 import time
@@ -13,12 +14,14 @@ from schemas import normalize_council_output
 
 _CACHE_LOCK = threading.Lock()
 _COUNCIL_CACHE: Dict[str, Dict[str, Any]] = {}
+_COUNCIL_SCHEMA_VERSION = "v2"
 
 
 def _cache_key(inputs: Dict[str, Any]) -> str:
     company = inputs.get("company_profile", {}) or {}
     failure_year = inputs.get("failure_year")
     key_payload = {
+        "schema_version": _COUNCIL_SCHEMA_VERSION,
         "company": str(company.get("name", "")),
         "ticker": str(company.get("ticker", "")),
         "failure_year": failure_year,
@@ -140,21 +143,97 @@ def _build_consensus_fallback(
     local_error: Optional[str],
     local_latency_ms: int,
 ) -> Dict[str, Any]:
+    def _extract_claim_payload(
+        row: Any,
+        *,
+        text_keys: List[str],
+    ) -> Tuple[str, Optional[float], List[int]]:
+        payload: Dict[str, Any] = {}
+        if isinstance(row, dict):
+            payload = row
+        elif isinstance(row, str):
+            raw = row.strip()
+            if raw.startswith("{") and raw.endswith("}"):
+                try:
+                    payload = json.loads(raw)
+                except Exception:
+                    try:
+                        parsed = ast.literal_eval(raw)
+                        if isinstance(parsed, dict):
+                            payload = parsed
+                    except Exception:
+                        payload = {}
+            if not payload:
+                return raw, None, []
+
+        if payload:
+            text = ""
+            for key in text_keys:
+                candidate = str(payload.get(key, "")).strip()
+                if candidate:
+                    text = candidate
+                    break
+            if not text:
+                text = str(payload).strip()
+            conf: Optional[float] = None
+            if "confidence" in payload:
+                try:
+                    conf = float(payload.get("confidence"))
+                except (TypeError, ValueError):
+                    conf = None
+            eids: List[int] = []
+            for value in list(payload.get("evidence_ids", []) or []):
+                try:
+                    idx = int(value)
+                except (TypeError, ValueError):
+                    continue
+                if idx > 0 and idx not in eids:
+                    eids.append(idx)
+            return text, conf, eids
+
+        return "Evidence unavailable", None, []
+
     recommendations = list(inputs.get("recommendations", []) or [])
     comparison = inputs.get("peer_summary", {}) or {}
     simulation = inputs.get("simulation", {}) or {}
     strategy_ids = evidence_ids[:2]
     driver_ids = evidence_ids[:2]
+    fallback_drivers: List[Dict[str, Any]] = []
+    for row in list((groq_raw or {}).get("failure_drivers", []) or [])[:3]:
+        text, conf, eids = _extract_claim_payload(row, text_keys=["driver", "strategy", "action"])
+        if not text:
+            continue
+        if conf is None:
+            conf = 0.62 if eids else 0.5
+        conf = max(0.3, min(0.85, conf))
+        fallback_drivers.append(
+            {
+                "driver": text,
+                "evidence_ids": eids if eids else driver_ids,
+                "confidence": conf,
+            }
+        )
+
+    fallback_strategies: List[Dict[str, Any]] = []
+    for row in recommendations[:3]:
+        text, conf, eids = _extract_claim_payload(row, text_keys=["strategy", "action", "driver"])
+        if not text:
+            continue
+        if conf is None:
+            conf = 0.58 if eids else 0.48
+        conf = max(0.3, min(0.8, conf))
+        fallback_strategies.append(
+            {
+                "strategy": text,
+                "evidence_ids": eids if eids else strategy_ids,
+                "confidence": conf,
+            }
+        )
+
     fallback = {
         "executive_summary": "Evidence unavailable. Consensus fallback was assembled from the available deterministic signals.",
-        "failure_drivers": [
-            {"driver": str(item), "evidence_ids": driver_ids, "confidence": 0.42}
-            for item in list((groq_raw or {}).get("failure_drivers", []) or [])[:3]
-        ],
-        "survivor_strategies": [
-            {"strategy": str(item), "evidence_ids": strategy_ids, "confidence": 0.42}
-            for item in recommendations[:3]
-        ],
+        "failure_drivers": fallback_drivers,
+        "survivor_strategies": fallback_strategies,
         "counterfactual_impact": {
             "before_score": float(inputs.get("failing_risk_score", 0.0) or 0.0),
             "after_score": float(simulation.get("adjusted_score", 0.0) or 0.0),
