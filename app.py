@@ -1786,6 +1786,8 @@ def main() -> None:
         st.session_state["assistant_waiting"] = False
     if "assistant_compact" not in st.session_state:
         st.session_state["assistant_compact"] = False
+    if "jarvis_q" not in st.session_state:
+        st.session_state["jarvis_q"] = ""
     if "analysis_cache" not in st.session_state:
         st.session_state["analysis_cache"] = None
     if "llm_test_result" not in st.session_state:
@@ -2569,10 +2571,9 @@ def main() -> None:
             for msg in st.session_state.get("assistant_messages", [])[-8:]:
                 st.markdown(_chat_bubble(str(msg.get("text", "")), str(msg.get("role", "assistant"))), unsafe_allow_html=True)
 
-            with st.form("jarvis_form", clear_on_submit=False):
+            with st.form("jarvis_form", clear_on_submit=True):
                 ask_q = st.text_input(
                     "Ask about this report...",
-                    value=st.session_state.get("jarvis_q", ""),
                     key="jarvis_q",
                     label_visibility="collapsed",
                     placeholder="Ask about this report...",
