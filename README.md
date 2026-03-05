@@ -5,6 +5,7 @@
 SignalForge is a Streamlit app that verifies whether a company actually failed, benchmarks survivor peers, runs a digital twin counterfactual, and exports a polished analyst report.
 
 Created code by Mohit Unecha and Hitayu Parikh
+
 Here is the slide show with a demo:
 https://docs.google.com/presentation/d/1HObwAEHvhz0HmbsJ9pumiWe8zYLaM8Uyb2TscbcqQWc/edit?usp=sharing
 
